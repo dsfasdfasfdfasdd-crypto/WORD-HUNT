@@ -539,11 +539,11 @@ body {
 }
 
 /* ========================================================
-   4. OYUN EKRANI (.IO OYUN SEVİYESİ)
+   4. OYUN EKRANI (.IO OYUN SEVİYESİ - GENİŞLETİLMİŞ ARENA)
    ======================================================== */
-#game-view {
-  max-width: 980px;
-  width: 100%;
+#view-game {
+  max-width: 1200px;
+  width: 95vw;
   padding: 24px;
 }
 
@@ -554,46 +554,47 @@ body {
   align-items: center;
   flex-wrap: wrap;
   gap: 12px;
-  background: rgba(10, 12, 16, 0.8);
+  background: rgba(10, 12, 16, 0.85);
   border: 1px solid #30363d;
   border-radius: 14px;
-  padding: 12px 18px;
+  padding: 14px 22px;
   box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+  width: 100%;
 }
 
 .game-stat-pill {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 900;
   letter-spacing: 1px;
 }
 
 .game-stat-pill.round { color: var(--accent-cyan); }
 .game-stat-pill.category { color: var(--accent-gold); }
-.game-stat-pill.timer { color: var(--accent-pink); font-size: 16px; }
+.game-stat-pill.timer { color: var(--accent-pink); font-size: 18px; font-family: var(--font-arcade); }
 
 .fever-bar-wrapper {
   flex: 1;
-  min-width: 180px;
+  min-width: 200px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .fever-label {
   font-family: var(--font-arcade);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--accent-pink);
   white-space: nowrap;
 }
 
 .fever-meter {
   flex: 1;
-  height: 12px;
+  height: 14px;
   background: #161b22;
-  border-radius: 6px;
+  border-radius: 8px;
   border: 1px solid #30363d;
   overflow: hidden;
   position: relative;
@@ -604,18 +605,19 @@ body {
   width: 0%;
   background: linear-gradient(90deg, #ff007f, #ff7700, #f1c40f);
   transition: width 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  box-shadow: 0 0 10px #ff007f;
+  box-shadow: 0 0 12px #ff007f;
 }
 
 /* OYUN İÇİ MERKEZ ALAN VE YAN LİDERLİK TABLOSU */
 .game-layout {
   display: grid;
-  grid-template-columns: 240px 1fr;
-  gap: 20px;
+  grid-template-columns: 260px 1fr;
+  gap: 24px;
   align-items: stretch;
+  width: 100%;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 860px) {
   .game-layout {
     grid-template-columns: 1fr;
   }
@@ -623,13 +625,13 @@ body {
 
 /* .IO LİDERLİK TABLOSU */
 .leaderboard-sidebar {
-  background: rgba(10, 12, 16, 0.7);
+  background: rgba(10, 12, 16, 0.8);
   border: 1px solid #30363d;
-  border-radius: 14px;
-  padding: 16px;
+  border-radius: 16px;
+  padding: 18px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   max-height: 480px;
   overflow-y: auto;
 }
@@ -643,7 +645,7 @@ body {
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid #30363d;
-  padding-bottom: 8px;
+  padding-bottom: 10px;
 }
 
 .leaderboard-list {
@@ -658,27 +660,28 @@ body {
   justify-content: space-between;
   background: #161b22;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
-  padding: 8px 10px;
+  border-radius: 10px;
+  padding: 10px 12px;
   transition: all 0.2s;
 }
 
 .lb-player-item.is-me {
   border-color: var(--accent-pink);
-  background: rgba(255, 0, 127, 0.1);
+  background: rgba(255, 0, 127, 0.12);
+  box-shadow: 0 0 10px rgba(255, 0, 127, 0.2);
 }
 
 .lb-left {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   overflow: hidden;
 }
 
 .lb-rank {
   font-family: var(--font-arcade);
   font-size: 11px;
-  width: 18px;
+  width: 20px;
   color: #8b949e;
 }
 
@@ -686,15 +689,15 @@ body {
 .lb-rank.silver { color: #e0e0e0; }
 .lb-rank.bronze { color: #cd7f32; }
 
-.lb-avatar { font-size: 18px; }
+.lb-avatar { font-size: 20px; }
 
 .lb-name {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 80px;
+  max-width: 90px;
 }
 
 .lb-right {
@@ -706,40 +709,43 @@ body {
 .lb-score {
   font-family: var(--font-tech);
   font-weight: 900;
-  font-size: 14px;
+  font-size: 15px;
   color: var(--accent-green);
 }
 
 .lb-status {
-  font-size: 10px;
+  font-size: 11px;
   color: #8b949e;
 }
 
-/* KELİME ALANI VE KARTLAR */
+/* GENİŞLETİLMİŞ KELİME ALANI VE KARTLAR */
 .word-arena {
-  background: rgba(16, 20, 27, 0.85);
-  border: 2px solid rgba(255, 255, 255, 0.12);
-  border-radius: 16px;
-  padding: 24px;
+  background: rgba(16, 20, 27, 0.88);
+  border: 2px solid rgba(255, 255, 255, 0.16);
+  border-radius: 18px;
+  padding: 32px 28px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 20px;
+  gap: 26px;
   position: relative;
   overflow: hidden;
-  box-shadow: inset 0 0 30px rgba(0,0,0,0.7);
+  box-shadow: inset 0 0 35px rgba(0,0,0,0.7), 0 15px 30px rgba(0,0,0,0.5);
+  min-height: 400px;
+  width: 100%;
 }
 
 .hint-banner {
-  background: rgba(33, 38, 45, 0.8);
+  background: rgba(33, 38, 45, 0.85);
   border: 1px dashed var(--accent-cyan);
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 13px;
+  padding: 10px 22px;
+  border-radius: 25px;
+  font-size: 14px;
   color: #c9d1d9;
   letter-spacing: 0.5px;
-  max-width: 90%;
+  max-width: 95%;
+  text-align: center;
 }
 
 .hint-banner span {
@@ -747,30 +753,45 @@ body {
   font-weight: 900;
 }
 
-/* BALATRO KELİME KARTLARI */
+/* BALATRO KELİME KARTLARI - YENİLENMİŞ YAN YANA ESNEK DÜZEN (ASLA ALT ALTA GELMEZ) */
 .cards-container {
   display: flex;
   gap: 12px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap; /* ALT ALTA KIRILMAYI ENGELLER */
   justify-content: center;
   align-items: center;
-  min-height: 110px;
-  padding: 10px;
+  min-height: 125px;
+  width: 100%;
+  max-width: 100%;
+  padding: 14px 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-pink) rgba(255,255,255,0.05);
+}
+
+.cards-container::-webkit-scrollbar {
+  height: 6px;
+}
+.cards-container::-webkit-scrollbar-thumb {
+  background: var(--accent-pink);
+  border-radius: 4px;
 }
 
 .word-card {
-  width: 68px;
-  height: 94px;
-  background: #1f2937;
+  flex: 0 0 auto;
+  width: clamp(52px, 5.2vw, 78px);
+  height: clamp(75px, 8vw, 108px);
+  background: #18202c;
   border: 2px solid #374151;
-  border-radius: 12px;
+  border-radius: 14px;
   display: flex;
   justify-content: center;
   align-items: center;
   font-family: var(--font-arcade);
-  font-size: 34px;
+  font-size: clamp(22px, 2.5vw, 36px);
   color: #4b5563;
-  box-shadow: 0 8px 0 #111827, 0 10px 15px rgba(0,0,0,0.5);
+  box-shadow: 0 8px 0 #0d121c, 0 10px 18px rgba(0,0,0,0.6);
   user-select: none;
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   position: relative;
@@ -781,15 +802,15 @@ body {
   background: #fdf0d5;
   color: #111827;
   border-color: var(--accent-gold);
-  box-shadow: 0 8px 0 #c7b08b, 0 0 20px rgba(241, 196, 15, 0.6);
-  transform: translateY(-4px) rotate(-1deg);
+  box-shadow: 0 8px 0 #c7b08b, 0 0 25px rgba(241, 196, 15, 0.7);
+  transform: translateY(-5px) rotate(-1deg);
 }
 
 .word-card.fever {
   background: linear-gradient(180deg, #ff77bc 0%, #ff007f 100%) !important;
   color: #fff !important;
   border-color: #ffffff !important;
-  box-shadow: 0 8px 0 #99004d, 0 0 25px #ff007f !important;
+  box-shadow: 0 8px 0 #99004d, 0 0 30px #ff007f !important;
   animation: cardShake 0.15s infinite alternate ease-in-out;
 }
 

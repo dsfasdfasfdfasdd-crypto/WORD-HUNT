@@ -5,8 +5,12 @@
 class GameController {
   constructor() {
     this.currentView = 'menu';
-    this.avatars = ['🪩', '🤖', '👾', '🐱‍💻', '🦊', '⚡', '👑', '🚀', '🎭', '🧠', '🦄', '🕹️', '💎', '🐉', '🎯', '🔥'];
-    this.selectedAvatar = '🪩';
+    this.avatars = [
+      '🎯', '🧩', '🔤', '🃏', '🕹️', '💡', '🔮', '📖',
+      '🧠', '🎭', '🔑', '💎', '🏆', '⚡', '🌀', '🔥',
+      '🪩', '🎲', '🎪', '🎨', '🛸', '🔭', '💠', '🧬'
+    ];
+    this.selectedAvatar = '🎯';
     this.selectedColor = '#ff007f';
     this.isCrtEnabled = true;
     this.isSfxEnabled = true;
