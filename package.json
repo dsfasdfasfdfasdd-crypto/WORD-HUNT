@@ -1,0 +1,12 @@
+{
+  "name": "word-hunt-io",
+  "version": "1.0.0",
+  "description": "Word Hunt .IO - Çok Oyunculu Canlı Kelime Savaşı (Balatro & Disco Synthwave Temalı)",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve ."
+  },
+  "keywords": ["game", "word-game", "multiplayer", "webrtc", "peerjs", "arcade", "balatro"],
+  "author": "Antigravity",
+  "license": "MIT"
+}

@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Word Hunt .IO - Çok Oyunculu Kelime Savaşı</title>
+  
+  <!-- GOOGLE FONTS -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;900&family=Press+Start+2P&family=Rajdhani:wght@600;700;900&display=swap" rel="stylesheet">
+  
+  <!-- LIBRARIES: GSAP, CANVAS-CONFETTI, PEERJS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+
+  <!-- STYLES -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- CANLI SHADER ARKA PLANI -->
+  <canvas id="bg-canvas"></canvas>
+  <div class="crt-overlay" id="crt-overlay"></div>
+
+  <!-- ÜST NAVBAR KONTROLÜ -->
+  <header class="top-navbar">
+    <div class="brand-logo" onclick="game.showView('menu')">
+      <span class="brand-icon">🪩</span>
+      <span class="brand-text">WORD HUNT</span>
+      <span class="io-tag">.IO</span>
+    </div>
+
+    <div class="nav-controls">
+      <button class="nav-btn" id="crt-btn" onclick="game.toggleCRT()" title="CRT Tarama Çizgisi">📺 CRT: AÇIK</button>
+      <button class="nav-btn" id="sfx-btn" onclick="game.toggleSFX()" title="Ses Efektleri">🔊 SES: AÇIK</button>
+      <button class="nav-btn" id="music-btn" onclick="game.toggleMusic()" title="Synthwave Disco Müziği">🎵 DISCO: KAPALI</button>
+      <button class="nav-btn" onclick="game.toggleHowToPlay()">❓ NASIL OYNANIR</button>
+    </div>
+  </header>
+
+  <!-- ANA OYUN ALANI KAPSAYICISI -->
+  <main class="main-wrapper">
+
+    <!-- 1. GİRİŞ VE PROFİL EKRANI -->
+    <section class="view-card active" id="view-menu">
+      <div>
+        <h1 class="game-hero-title">WORD HUNT</h1>
+        <p class="hero-subtitle">Çok Oyunculu Canlı Kelime Düellosu</p>
+      </div>
+
+      <!-- PROFİL VE AVATAR -->
+      <div class="profile-box">
+        <div class="avatar-preview-wrapper">
+          <div class="avatar-big-badge" id="current-avatar-badge" title="Avatar Değiştir">🪩</div>
+          <div style="text-align: left; flex: 1;">
+            <div style="font-size: 11px; color: var(--accent-gold); font-family: var(--font-arcade); margin-bottom: 4px;">KULLANICI PROFİLİ</div>
+            <div style="font-size: 13px; color: #8b949e;">Bir avatar ve lakap seç, savaşa katıl!</div>
+          </div>
+        </div>
+
+        <!-- AVATAR SEÇİM LİSTESİ -->
+        <div class="avatar-grid" id="avatar-grid">
+          <!-- JS ile doldurulacak -->
+        </div>
+
+        <div class="name-input-row">
+          <input type="text" class="stylish-input" id="nickname-input" placeholder="LAKABINI YAZ..." maxlength="14" autocomplete="off">
+          <button class="dice-btn" onclick="game.randomizeNickname()" title="Rastgele İsim Üret">🎲</button>
+        </div>
+      </div>
+
+      <!-- OYUN MODU BUTONLARI -->
+      <div class="menu-actions">
+        <button class="action-btn btn-single" onclick="game.startSinglePlayer()">
+          <span>🤖</span>
+          <span>TEK OYUNCULU (BOTLARLA)</span>
+        </button>
+
+        <button class="action-btn btn-create" onclick="game.showView('create-room')">
+          <span>👑</span>
+          <span>ODA KUR (CREATE ROOM)</span>
+        </button>
+
+        <button class="action-btn btn-join" onclick="game.showView('join-room')">
+          <span>🚀</span>
+          <span>ODAYA KATIL (KOD İLE)</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- 2. ODA KURMA EKRANI -->
+    <section class="view-card" id="view-create-room">
+      <div>
+        <h2 style="font-family: var(--font-arcade); font-size: 20px; color: var(--accent-pink); margin-bottom: 6px;">ODA KURULUMU</h2>
+        <p class="hero-subtitle">Arkadaşlarını davet et veya açık maç kur</p>
+      </div>
+
+      <div class="settings-group">
+        <div class="setting-item">
+          <label for="room-category">KELİME KATEGORİSİ</label>
+          <select id="room-category" class="setting-select">
+            <option value="genel">🌍 Genel Türkçe Kelimeler</option>
+            <option value="teknoloji">💻 Teknoloji & Yazılım</option>
+            <option value="populer">🎬 Oyun & Popüler Sinema</option>
+            <option value="hayvanlar">🐾 Doğa & Hayvanlar</option>
+            <option value="yemek">🍕 Lezzetler & Yemek</option>
+            <option value="kisa">⚡ Hızlı 4-5 Harfliler</option>
+            <option value="all">🔥 Karışık (Tüm Kategoriler)</option>
+          </select>
+        </div>
+
+        <div class="setting-item">
+          <label for="room-rounds">TUR SAYISI</label>
+          <select id="room-rounds" class="setting-select">
+            <option value="5">5 Tur (Hızlı Maç)</option>
+            <option value="8" selected>8 Tur (Standart)</option>
+            <option value="12">12 Tur (Şampiyonluk)</option>
+          </select>
+        </div>
+
+        <div class="setting-item">
+          <label for="room-speed">HARF AÇILMA SÜRESİ</label>
+          <select id="room-speed" class="setting-select">
+            <option value="2">2 Saniye (Çılgın Hızlı)</option>
+            <option value="3" selected>3 Saniye (Dengeli)</option>
+            <option value="4">4 Saniye (Rahat Mod)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="menu-actions">
+        <button class="action-btn btn-create" onclick="game.submitCreateRoom()">
+          <span>✨</span>
+          <span>ODAYI OLUŞTUR VE LOBİYE GEÇ</span>
+        </button>
+        <button class="action-btn" style="background:#21262d; border:1px solid #30363d;" onclick="game.showView('menu')">
+          <span>Geri Dön</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- 3. ODAYA KATILMA EKRANI -->
+    <section class="view-card" id="view-join-room">
+      <div>
+        <h2 style="font-family: var(--font-arcade); font-size: 20px; color: var(--accent-cyan); margin-bottom: 6px;">ODAYA KATIL</h2>
+        <p class="hero-subtitle">Arkadaşının sana verdiği oda kodunu gir</p>
+      </div>
+
+      <div class="profile-box">
+        <label style="font-size: 13px; color: var(--accent-gold); font-weight: 700; letter-spacing: 1px;">6 HANELİ ODA KODU</label>
+        <input type="text" class="stylish-input" id="join-code-input" placeholder="ÖRNEK: WH-7A92" maxlength="10" autocomplete="off">
+        <div style="font-size: 12px; color: #8b949e;">İpucu: Arkadaşının paylaştığı bağlantıya tıklayarak da direkt katılabilirsin!</div>
+      </div>
+
+      <div class="menu-actions">
+        <button class="action-btn btn-join" onclick="game.submitJoinRoom()">
+          <span>🚀</span>
+          <span>ODAYA BAĞLAN</span>
+        </button>
+        <button class="action-btn" style="background:#21262d; border:1px solid #30363d;" onclick="game.showView('menu')">
+          <span>Geri Dön</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- 4. LOBİ / BEKLEME SALONU -->
+    <section class="view-card" id="view-lobby">
+      <div class="lobby-header">
+        <div style="font-family: var(--font-arcade); font-size: 14px; color: var(--accent-cyan);">BEKLEME SALONU</div>
+        
+        <div class="room-code-badge">
+          <div>
+            <div style="font-size: 11px; color: #8b949e; text-align: left;">ODA KODU:</div>
+            <div class="room-code-text" id="lobby-room-code">WH-0000</div>
+          </div>
+          <div style="display:flex; gap:6px;">
+            <button class="copy-btn" onclick="game.copyRoomCode()">KODU KOPYALA</button>
+            <button class="copy-btn" style="background:var(--accent-cyan);" onclick="game.copyRoomLink()">LİNK KOPYALA</button>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <span style="font-size:12px; color:var(--accent-gold); font-weight:700;">OYUNCULAR (<span id="lobby-player-count">1</span>/8)</span>
+          <button id="add-bot-btn" class="nav-btn" style="padding:4px 10px; font-size:11px;" onclick="network.addBotToRoom()">+ BOT EKLE</button>
+        </div>
+        <div class="players-grid" id="lobby-players-grid">
+          <!-- JS ile doldurulacak oyuncu kartları -->
+        </div>
+      </div>
+
+      <div class="menu-actions" id="lobby-action-buttons">
+        <!-- Host ise Başlat butonu, İstemci ise Bekleme mesajı -->
+      </div>
+    </section>
+
+    <!-- 5. OYUN SAVAŞ ALANI (.IO OYUNU) -->
+    <section class="view-card" id="view-game">
+      <!-- ÜST STATUS ŞERİDİ -->
+      <div class="game-top-bar">
+        <div class="game-stat-pill round">
+          <span>🏆</span>
+          <span id="game-round-pill">TUR 1/8</span>
+        </div>
+
+        <div class="game-stat-pill category">
+          <span>🏷️</span>
+          <span id="game-category-pill">GENEL TÜRKÇE</span>
+        </div>
+
+        <div class="fever-bar-wrapper">
+          <span class="fever-label" id="fever-multiplier-tag">DISCO 1.0X</span>
+          <div class="fever-meter">
+            <div class="fever-meter-fill" id="fever-meter-fill"></div>
+          </div>
+        </div>
+
+        <div class="game-stat-pill timer">
+          <span>⏱️</span>
+          <span id="game-timer-pill">3s</span>
+        </div>
+      </div>
+
+      <!-- OYUN IZGARASI: SOL LİDERLİK + SAĞ ARENA -->
+      <div class="game-layout">
+        <!-- SOL: CANLI .IO LİDERLİK TABLOSU -->
+        <aside class="leaderboard-sidebar">
+          <div class="leaderboard-title">
+            <span>📊 CANLI SKOR</span>
+            <span style="font-size:10px; color:#8b949e;">CANLI</span>
+          </div>
+          <div class="leaderboard-list" id="game-leaderboard-list">
+            <!-- JS ile doldurulacak -->
+          </div>
+        </aside>
+
+        <!-- SAĞ: MERKEZ OYUN ALANI -->
+        <div class="word-arena" id="word-arena">
+          <div class="hint-banner" id="word-hint-banner">
+            İpucu: <span>Kelime bekleniyor...</span>
+          </div>
+
+          <!-- BALATRO 3D KELİME KARTLARI -->
+          <div class="cards-container" id="cards-container">
+            <!-- JS ile dinamik olarak oluşturulacak harf kartları -->
+          </div>
+
+          <!-- TAHMİN GİRİŞİ -->
+          <div class="guess-action-group">
+            <input type="text" class="stylish-input" id="game-guess-input" placeholder="TAHMİNİNİ YAZ..." autocomplete="off">
+            <button class="btn-guess" onclick="game.submitGuess()">TAHMİN ET</button>
+          </div>
+
+          <!-- HIZLI EMOJİ REAKSİYONLARI -->
+          <div class="reactions-bar">
+            <button class="reaction-btn" onclick="game.sendReaction('🔥')">🔥</button>
+            <button class="reaction-btn" onclick="game.sendReaction('👏')">👏</button>
+            <button class="reaction-btn" onclick="game.sendReaction('😱')">😱</button>
+            <button class="reaction-btn" onclick="game.sendReaction('😂')">😂</button>
+            <button class="reaction-btn" onclick="game.sendReaction('💀')">💀</button>
+            <button class="reaction-btn" onclick="game.sendReaction('💯')">💯</button>
+            <button class="reaction-btn" onclick="game.sendReaction('🧠')">🧠</button>
+            <button class="reaction-btn" onclick="game.sendReaction('👑')">👑</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. MAÇ SONU / ZAFER KÜRSÜSÜ -->
+    <section class="view-card" id="view-victory">
+      <div>
+        <h1 style="font-family: var(--font-arcade); font-size: 26px; color: var(--accent-gold); margin-bottom: 6px;">🎉 ŞAMPİYONLUK KÜRSÜSÜ</h1>
+        <p class="hero-subtitle">Mücadele Sona Erdi!</p>
+      </div>
+
+      <div class="podium-container" id="podium-container">
+        <!-- JS ile 1., 2. ve 3. yerleştirilecek -->
+      </div>
+
+      <div class="menu-actions">
+        <button class="action-btn btn-single" onclick="game.playAgain()">
+          <span>🔄</span>
+          <span>YENİDEN OYNA</span>
+        </button>
+        <button class="action-btn" style="background:#21262d; border:1px solid #30363d;" onclick="game.showView('menu')">
+          <span>🏠 ANA MENÜYE DÖN</span>
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- BİLDİRİM TOASTLARI -->
+  <div id="toast-container"></div>
+
+  <!-- NASIL OYNANIR MODAL -->
+  <div id="how-to-play-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); z-index:300; justify-content:center; align-items:center;">
+    <div class="view-card active" style="max-width:500px; text-align:left;">
+      <h2 style="font-family:var(--font-arcade); font-size:18px; color:var(--accent-gold); margin-bottom:12px;">🎮 NASIL OYNANIR?</h2>
+      <ul style="font-size:14px; line-height:1.7; color:#c9d1d9; padding-left:20px; margin-bottom:16px;">
+        <li>Her turda gizli bir kelime seçilir ve ipucu ekranda görünür.</li>
+        <li>Her <strong>3 saniyede bir</strong> kelimenin rastgele bir harfi açılır.</li>
+        <li>Kelimeyi ne kadar <strong>erken ve az harf açılmışken</strong> tahmin edersen, o kadar yüksek puan kazanırsın!</li>
+        <li>Üst üste doğru bilirsen <strong>DISCO FEVER</strong> açılır ve puan çarpanın 1.5x, 2.5x katına çıkar!</li>
+        <li>Arkadaşlarını davet etmek için <strong>Oda Kodu</strong> veya <strong>Davet Linki</strong> paylaşabilirsin.</li>
+      </ul>
+      <button class="action-btn btn-single" style="width:100%;" onclick="game.toggleHowToPlay()">ANLADIM, BAŞLA!</button>
+    </div>
+  </div>
+
+  <!-- SCRIPTS -->
+  <script src="js/words.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/network.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
