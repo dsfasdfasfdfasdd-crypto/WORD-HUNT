@@ -285,7 +285,7 @@ class GameController {
         card.className = `player-lobby-card ${p.isHost ? 'is-host' : ''}`;
         card.innerHTML = `
           ${p.isHost ? '<span class="host-crown">👑</span>' : ''}
-          <div class="player-lobby-avatar">${p.avatar}</div>
+          <div class="player-lobby-avatar">${game.renderAvatarHTML(p.avatar)}</div>
           <div class="player-lobby-name">${p.name}</div>
           <span class="player-lobby-tag ${p.isReady ? 'ready' : ''}">${p.isBot ? '🤖 BOT' : (p.isHost ? 'ODA SAHİBİ' : 'HAZIR')}</span>
         `;
@@ -529,7 +529,7 @@ class GameController {
       slot.innerHTML = `
         <div class="podium-avatar">
           ${rank === 1 ? '<span class="podium-crown">👑</span>' : ''}
-          ${player.avatar}
+          ${game.renderAvatarHTML(player.avatar)}
         </div>
         <div class="podium-name">${player.name}</div>
         <div class="podium-pillar rank-${rank}">
@@ -613,7 +613,7 @@ class GameController {
       item.innerHTML = `
         <div class="lb-left">
           <span class="lb-rank ${rankClass}">#${idx + 1}</span>
-          <span class="lb-avatar">${p.avatar}</span>
+          <span class="lb-avatar">${game.renderAvatarHTML(p.avatar)}</span>
           <span class="lb-name" title="${p.name}">${p.name}</span>
         </div>
         <div class="lb-right">

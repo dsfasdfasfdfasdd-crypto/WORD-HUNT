@@ -123,6 +123,17 @@ class NetworkManager {
       gameState: 'LOBBY'
     });
 
+    // Host da kendi yazdığı değişiklikleri dinlemeli (Senkronizasyon için)
+    this.stateRef.on('value', snap => {
+      const state = snap.val();
+      if (state) this.handleStateUpdate(state);
+    });
+
+    this.eventsRef.on('child_added', snap => {
+      const event = snap.val();
+      this.handleEvent(event);
+    });
+
     // İstemcilerden gelen aksiyonları dinle (Host otoritesi)
     this.actionsRef.on('child_added', (snapshot) => {
       const action = snapshot.val();
