@@ -56,6 +56,7 @@ class NetworkManager {
     this.roundTimer = 0;
     this.roundInterval = null;
     this.secondsToNextLetter = 3;
+    this.nextRoundTimeout = null; // Added to prevent double nextRound calls
     
     this.roundActive = false;
     this.usedWords = [];
@@ -466,40 +467,45 @@ class NetworkManager {
   }
 
   processGuess(playerId, rawGuess) {
-    if (!this.targetWord || !this.roundActive) return;
-    const guess = toTurkishUpper(rawGuess);
-    const player = this.players.find(p => p.id === playerId);
-    if (!player) return;
+    try {
+      if (!this.targetWord || !this.roundActive) return;
+      const guess = toTurkishUpper(rawGuess);
+      const player = this.players.find(p => p.id === playerId);
+      if (!player) return;
 
-    if (guess === this.targetWord && this.roundActive) {
-      this.roundActive = false; // Strictly prevent multiple winners
-      const wordCopy = this.targetWord; // Copy word before clearing
-      this.targetWord = null; // Clear target word to prevent spam completely
-      this.clearRoundTimers();
+      if (guess === this.targetWord && this.roundActive) {
+        this.roundActive = false; // Strictly prevent multiple winners
+        const wordCopy = this.targetWord; // Copy word before clearing
+        this.targetWord = null; // Clear target word to prevent spam completely
+        this.clearRoundTimers();
 
-      const unrevealedCount = this.revealedLetters.filter(l => l === null).length;
-      player.streak++;
-      const multiplier = player.streak >= 4 ? 2.5 : (player.streak >= 2 ? 1.5 : 1.0);
-      const basePoints = 200 + (unrevealedCount * 80) + Math.max(0, this.roundTimer * 10);
-      const totalPoints = Math.round(basePoints * multiplier);
+        const unrevealedCount = this.revealedLetters.filter(l => l === null).length;
+        player.streak++;
+        const multiplier = player.streak >= 4 ? 2.5 : (player.streak >= 2 ? 1.5 : 1.0);
+        const basePoints = 200 + (unrevealedCount * 80) + Math.max(0, this.roundTimer * 10);
+        const totalPoints = Math.round(basePoints * multiplier);
 
-      player.score += totalPoints;
-      player.status = `🎯 BİLDİ! (+${totalPoints})`;
+        player.score += totalPoints;
+        player.status = `🎯 BİLDİ! (+${totalPoints})`;
 
-      this.players.forEach(p => {
-        if (p.id !== playerId) {
-          p.streak = 0;
-          p.status = 'Kaçırdı!';
-        }
-      });
+        this.players.forEach(p => {
+          if (p.id !== playerId) {
+            p.streak = 0;
+            p.status = 'Kaçırdı!';
+          }
+        });
 
-      this.updateState({ players: this.players });
-      this.emitEvent('CORRECT_GUESS', { winner: player, word: wordCopy, points: totalPoints, players: this.players });
+        this.updateState({ players: this.players });
+        this.emitEvent('CORRECT_GUESS', { winner: player, word: wordCopy, points: totalPoints, players: this.players });
 
-      setTimeout(() => this.nextRound(), 3500);
-    } else {
-      player.status = '❌ Yanlış!';
-      this.updateState({ players: this.players });
+        if (this.nextRoundTimeout) clearTimeout(this.nextRoundTimeout);
+        this.nextRoundTimeout = setTimeout(() => this.nextRound(), 3500);
+      } else {
+        player.status = '❌ Yanlış!';
+        this.updateState({ players: this.players });
+      }
+    } catch (e) {
+      console.error("processGuess error:", e);
     }
   }
 
@@ -514,15 +520,13 @@ class NetworkManager {
     this.updateState({ players: this.players });
     this.emitEvent('ROUND_TIMEOUT', { word: wordCopy, players: this.players });
     
-    if (this.isSinglePlayer) {
-      setTimeout(() => this.nextRound(), 3500);
-      return;
-    }
-    setTimeout(() => this.nextRound(), 3500);
+    if (this.nextRoundTimeout) clearTimeout(this.nextRoundTimeout);
+    this.nextRoundTimeout = setTimeout(() => this.nextRound(), 3500);
   }
 
   endGame() {
     this.clearRoundTimers();
+    if (this.nextRoundTimeout) clearTimeout(this.nextRoundTimeout);
     this.roundActive = false;
     this.targetWord = null;
     const sorted = [...this.players].sort((a, b) => b.score - a.score);
