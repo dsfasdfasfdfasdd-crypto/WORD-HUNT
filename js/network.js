@@ -114,11 +114,13 @@ class NetworkManager {
     this.actionsRef = db.ref(`rooms/${this.roomCode}/actions`);
     this.eventsRef = db.ref(`rooms/${this.roomCode}/events`);
 
-    // İlk durumu yaz
-    this.stateRef.set({
-      players: this.players,
-      settings: this.roomSettings,
-      gameState: 'LOBBY'
+    // Eski odalardan kalan 'actions' ve 'events' verilerini temizlemek için tüm düğümü eziyoruz
+    db.ref(`rooms/${this.roomCode}`).set({
+      state: {
+        players: this.players,
+        settings: this.roomSettings,
+        gameState: 'LOBBY'
+      }
     });
 
     // Host da kendi yazdığı değişiklikleri dinlemeli (Senkronizasyon için)
@@ -242,41 +244,45 @@ class NetworkManager {
   handleClientAction(action, actionKey) {
     if (!this.isHost) return;
     
-    switch (action.type) {
-      case 'PLAYER_JOIN': {
-        const p = action.player;
-        p.score = 0; p.streak = 0; p.isReady = true; p.status = 'Hazır';
-        
-        let name = p.name;
-        let count = 1;
-        while (this.players.some(x => x.name === name)) {
-          name = `${p.name} (${++count})`;
-        }
-        p.name = name;
+    try {
+      switch (action.type) {
+        case 'PLAYER_JOIN': {
+          const p = action.player;
+          p.score = 0; p.streak = 0; p.isReady = true; p.status = 'Hazır';
+          
+          let name = p.name;
+          let count = 1;
+          while (this.players.some(x => x.name === name)) {
+            name = `${p.name} (${++count})`;
+          }
+          p.name = name;
 
-        this.players.push(p);
-        this.updateState({ players: this.players });
-        
-        this.emitEvent('CHAT', {
-          message: { from: 'SİSTEM', text: `${p.name} odaya katıldı!`, color: '#2ecc71' }
-        });
-        break;
-      }
-      case 'SUBMIT_GUESS':
-        this.processGuess(action.playerId, action.guess);
-        break;
-      case 'SEND_REACTION':
-        this.emitEvent('REACTION', { emoji: action.emoji, playerId: action.playerId });
-        break;
-      case 'SEND_CHAT': {
-        const sender = this.players.find(p => p.id === action.playerId);
-        if (sender) {
+          this.players.push(p);
+          this.updateState({ players: this.players });
+          
           this.emitEvent('CHAT', {
-            message: { from: sender.name, avatar: sender.avatar, text: action.text, color: sender.color }
+            message: { from: 'SİSTEM', text: `${p.name} odaya katıldı!`, color: '#2ecc71' }
           });
+          break;
         }
-        break;
+        case 'SUBMIT_GUESS':
+          this.processGuess(action.playerId, action.guess);
+          break;
+        case 'SEND_REACTION':
+          this.emitEvent('REACTION', { emoji: action.emoji, playerId: action.playerId });
+          break;
+        case 'SEND_CHAT': {
+          const sender = this.players.find(p => p.id === action.playerId);
+          if (sender) {
+            this.emitEvent('CHAT', {
+              message: { from: sender.name, avatar: sender.avatar, text: action.text, color: sender.color }
+            });
+          }
+          break;
+        }
       }
+    } catch (e) {
+      console.error("Action error:", e);
     }
     
     // Aksiyon işlendikten sonra sil
@@ -422,7 +428,7 @@ class NetworkManager {
           });
 
           // FIX: If this was the last letter to reveal, immediately end the round.
-          if (unrevealed.length === 1) {
+          if (unrevealed.length <= 1) {
             this.handleRoundTimeout();
             return;
           }
