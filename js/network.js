@@ -1,19 +1,41 @@
 // ========================================================
-// WORD HUNT .IO - NETWORKING & MULTIPLAYER ENGINE (P2P + BOTS)
+// WORD HUNT .IO - NETWORKING & MULTIPLAYER ENGINE (FIREBASE)
 // ========================================================
+
+// ⚠️ DİKKAT: MULTIPLAYER'IN ÇALIŞMASI İÇİN KENDİ FIREBASE BİLGİLERİNİ BURAYA GİRMELİSİN ⚠️
+// 1. firebase.google.com adresine git ve ücretsiz bir proje oluştur.
+// 2. Realtime Database oluştur (Test modunda).
+// 3. Proje ayarlarından "Web Uygulaması" ekle ve sana verilen Config nesnesini aşağıya yapıştır!
+const firebaseConfig = {
+  apiKey: "BURAYA_KENDI_BILGILERINI_YAPISTIR",
+  authDomain: "word-hunt-io.firebaseapp.com",
+  databaseURL: "https://word-hunt-io.firebaseio.com",
+  projectId: "word-hunt-io",
+  storageBucket: "word-hunt-io.appspot.com",
+  messagingSenderId: "123456789",
+  appId: "1:123456789:web:abcdef"
+};
+
+// Config kontrolü
+const isFirebaseConfigured = !firebaseConfig.apiKey.includes("BURAYA");
+
+if (isFirebaseConfigured) {
+  firebase.initializeApp(firebaseConfig);
+}
+
+const db = isFirebaseConfigured ? firebase.database() : null;
 
 class NetworkManager {
   constructor() {
-    this.peer = null;
-    this.connections = []; // Host: all connected clients. Client: connection to host
-    this.hostConn = null;
-    this.isHost = false;
     this.roomCode = null;
     this.myId = null;
+    this.isHost = false;
+    this.isSinglePlayer = false;
+    
     this.localPlayer = {
       id: null,
       name: 'Oyuncu',
-      avatar: '🪩',
+      avatar: '🎯',
       color: '#ff007f',
       score: 0,
       streak: 0,
@@ -23,26 +45,23 @@ class NetworkManager {
       status: 'Hazır'
     };
 
-    this.players = []; // List of all players in current room
+    this.players = [];
     this.roomSettings = {
       category: 'genel',
       rounds: 5,
-      revealSpeed: 3, // seconds
-      maxPlayers: 8,
-      isPublic: true
+      revealSpeed: 3
     };
 
     this.currentRound = 0;
-    this.currentWordData = null; // Host only knows raw word
+    this.targetWord = null;
+    this.currentWordData = null;
     this.revealedLetters = [];
     this.roundTimer = 0;
     this.roundInterval = null;
-    this.letterRevealInterval = null;
     this.secondsToNextLetter = 3;
-    this.isSinglePlayer = false;
     this.botIntervals = [];
 
-    // Callbacks to UI
+    // Callbacks
     this.onPlayerListUpdate = null;
     this.onGameStateUpdate = null;
     this.onLetterRevealed = null;
@@ -52,21 +71,28 @@ class NetworkManager {
     this.onReactionReceived = null;
     this.onChatMessage = null;
     this.onStatusMessage = null;
+
+    // Listeners
+    this.stateRef = null;
+    this.actionsRef = null;
+    this.eventsRef = null;
   }
 
-  // --- ODA KODU OLUŞTURMA ---
+  // --- FIREBASE UYARISI ---
+  checkFirebase() {
+    if (!isFirebaseConfigured) {
+      alert("🚨 DİKKAT: Multiplayer aktif değil!\n\n1. js/network.js dosyasını açın.\n2. En üstteki 'firebaseConfig' ayarlarını kendi Firebase projenizle değiştirin.\n\nSadece Tek Oyunculu (Botlarla) mod şu an çalışır.");
+      if (this.onStatusMessage) this.onStatusMessage("Sunucu ayarları eksik. Sadece botlarla oynayabilirsiniz.");
+      return false;
+    }
+    return true;
+  }
+
   generateRoomCode() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let code = 'WH-';
-    for (let i = 0; i < 4; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
+    for (let i = 0; i < 4; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
     return code;
-  }
-
-  getPeerIdForRoom(roomCode) {
-    const clean = roomCode.replace(/[^A-Za-z0-9]/g, '').toLowerCase();
-    return `whunt-v2-${clean}`;
   }
 
   // --- HOST: ODA KURMA ---
@@ -74,51 +100,40 @@ class NetworkManager {
     this.isHost = true;
     this.isSinglePlayer = false;
     this.roomSettings = { ...this.roomSettings, ...customSettings };
+    
+    if (!this.checkFirebase()) return "HATA";
+
     this.roomCode = this.generateRoomCode();
     this.myId = 'host_' + Math.random().toString(36).substr(2, 6);
     this.localPlayer.id = this.myId;
     this.localPlayer.isHost = true;
-    this.localPlayer.score = 0;
-    this.localPlayer.streak = 0;
+    
     this.players = [{ ...this.localPlayer }];
 
-    if (this.onStatusMessage) this.onStatusMessage(`Oda oluşturuluyor (${this.roomCode})...`);
+    // DB Referansları
+    this.stateRef = db.ref(`rooms/${this.roomCode}/state`);
+    this.actionsRef = db.ref(`rooms/${this.roomCode}/actions`);
+    this.eventsRef = db.ref(`rooms/${this.roomCode}/events`);
 
-    // PeerJS bağlantısı kur
-    const peerId = this.getPeerIdForRoom(this.roomCode);
-    try {
-      this.peer = new Peer(peerId, {
-        debug: 1,
-        config: {
-          iceServers: [
-            { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' }
-          ]
-        }
-      });
+    // İlk durumu yaz
+    this.stateRef.set({
+      players: this.players,
+      settings: this.roomSettings,
+      gameState: 'LOBBY'
+    });
 
-      this.peer.on('open', (id) => {
-        console.log('[Host] Peer açıldı. Room Code:', this.roomCode, 'Peer ID:', id);
-        if (this.onStatusMessage) this.onStatusMessage(`Oda hazır! Kod: ${this.roomCode}`);
-        this.broadcastLobbyUpdate();
-      });
+    // İstemcilerden gelen aksiyonları dinle (Host otoritesi)
+    this.actionsRef.on('child_added', (snapshot) => {
+      const action = snapshot.val();
+      this.handleClientAction(action, snapshot.key);
+    });
 
-      this.peer.on('connection', (conn) => {
-        this.handleClientConnect(conn);
-      });
+    // Odayı kapatma
+    window.addEventListener('beforeunload', () => {
+      db.ref(`rooms/${this.roomCode}`).remove();
+    });
 
-      this.peer.on('error', (err) => {
-        console.warn('[Host Peer Warning]', err);
-        // Eğer ID çakışması olursa yeni kod dene
-        if (err.type === 'unavailable-id') {
-          console.log('ID çakıştı, tekrar deneniyor...');
-          this.createRoom(customSettings);
-        }
-      });
-    } catch (e) {
-      console.error('[PeerJS Exception]', e);
-    }
-
+    if (this.onStatusMessage) this.onStatusMessage(`Oda hazır! Kod: ${this.roomCode}`);
     return this.roomCode;
   }
 
@@ -131,32 +146,20 @@ class NetworkManager {
     this.myId = 'solo_player';
     this.localPlayer.id = this.myId;
     this.localPlayer.isHost = true;
-    this.localPlayer.score = 0;
-    this.localPlayer.streak = 0;
     this.players = [{ ...this.localPlayer }];
 
-    // Akıllı Botları Ekle
     const botArchetypes = [
-      { name: 'Kaan (Pro)', avatar: '👑', color: '#f1c40f', iq: 0.8 },
-      { name: 'Zeynep_JS', avatar: '🐱‍💻', color: '#00e5ff', iq: 0.65 },
-      { name: 'PikselBot', avatar: '👾', color: '#9d4edd', iq: 0.5 },
-      { name: 'AlevliKurt', avatar: '🔥', color: '#ff6b00', iq: 0.6 }
+      { name: 'Kaan (Pro)', avatar: 'assets/avatars/wizard.jpg', color: '#f1c40f', iq: 0.8 },
+      { name: 'Zeynep_JS', avatar: 'assets/avatars/gamergirl.jpg', color: '#00e5ff', iq: 0.65 },
+      { name: 'PikselBot', avatar: 'assets/avatars/jester.jpg', color: '#9d4edd', iq: 0.5 },
+      { name: 'AlevliKurt', avatar: 'assets/avatars/coolcat.jpg', color: '#ff6b00', iq: 0.6 }
     ];
 
     for (let i = 0; i < Math.min(botCount, botArchetypes.length); i++) {
       const b = botArchetypes[i];
       this.players.push({
-        id: 'bot_' + i,
-        name: b.name,
-        avatar: b.avatar,
-        color: b.color,
-        score: 0,
-        streak: 0,
-        isHost: false,
-        isReady: true,
-        isBot: true,
-        iq: b.iq,
-        status: 'Hazır'
+        id: 'bot_' + i, name: b.name, avatar: b.avatar, color: b.color,
+        score: 0, streak: 0, isHost: false, isReady: true, isBot: true, iq: b.iq, status: 'Hazır'
       });
     }
 
@@ -164,145 +167,77 @@ class NetworkManager {
     return this.roomCode;
   }
 
-  // --- BOT EKLE (Host multiplayer lobisindeyken de bot ekleyebilir) ---
   addBotToRoom() {
     if (!this.isHost) return;
-    if (this.players.length >= this.roomSettings.maxPlayers) return;
+    if (this.players.length >= 8) return;
 
-    const botArchetypes = [
-      { name: 'Siber_Bot', avatar: '🤖', color: '#0070dd', iq: 0.6 },
-      { name: 'Balatro_AI', avatar: '🪩', color: '#ff007f', iq: 0.75 },
-      { name: 'Matrix_Neo', avatar: '⚡', color: '#2ecc71', iq: 0.65 },
-      { name: 'TurboKelime', avatar: '🚀', color: '#e63946', iq: 0.7 }
-    ];
-
-    const available = botArchetypes.filter(b => !this.players.some(p => p.name === b.name));
-    const chosen = available.length > 0 ? available[0] : {
-      name: 'Bot_' + Math.floor(Math.random() * 100),
-      avatar: '🤖',
-      color: '#ffaa00',
-      iq: 0.6
-    };
-
+    const b = { name: 'SiberBot', avatar: 'assets/avatars/shadow.jpg', color: '#0070dd', iq: 0.6 };
     const newBot = {
-      id: 'bot_' + Date.now(),
-      name: chosen.name,
-      avatar: chosen.avatar,
-      color: chosen.color,
-      score: 0,
-      streak: 0,
-      isHost: false,
-      isReady: true,
-      isBot: true,
-      iq: chosen.iq,
-      status: 'Hazır'
+      id: 'bot_' + Date.now(), name: b.name + Math.floor(Math.random()*10), avatar: b.avatar, color: b.color,
+      score: 0, streak: 0, isHost: false, isReady: true, isBot: true, iq: b.iq, status: 'Hazır'
     };
 
     this.players.push(newBot);
-    this.broadcastLobbyUpdate();
+    this.updateState({ players: this.players });
   }
 
   // --- CLIENT: ODAYA KATILMA ---
   joinRoom(targetCode, playerInfo = {}) {
+    if (!this.checkFirebase()) return;
+    
     this.isHost = false;
     this.isSinglePlayer = false;
     this.roomCode = targetCode.toUpperCase().trim();
-    if (!this.roomCode.startsWith('WH-')) {
-      this.roomCode = 'WH-' + this.roomCode.replace(/[^A-Za-z0-9]/g, '');
-    }
+    if (!this.roomCode.startsWith('WH-')) this.roomCode = 'WH-' + this.roomCode;
 
     this.myId = 'client_' + Math.random().toString(36).substr(2, 6);
     this.localPlayer.id = this.myId;
     this.localPlayer = { ...this.localPlayer, ...playerInfo };
 
-    if (this.onStatusMessage) this.onStatusMessage(`Odaya bağlanılıyor: ${this.roomCode}...`);
+    if (this.onStatusMessage) this.onStatusMessage(`Bağlanılıyor: ${this.roomCode}...`);
 
-    const hostPeerId = this.getPeerIdForRoom(this.roomCode);
-    const myClientPeerId = `whunt-cl-${Math.random().toString(36).substr(2, 8)}`;
+    this.stateRef = db.ref(`rooms/${this.roomCode}/state`);
+    this.actionsRef = db.ref(`rooms/${this.roomCode}/actions`);
+    this.eventsRef = db.ref(`rooms/${this.roomCode}/events`);
 
-    try {
-      this.peer = new Peer(myClientPeerId, {
-        debug: 1,
-        config: {
-          iceServers: [
-            { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' }
-          ]
-        }
+    // Oda var mı kontrol et
+    this.stateRef.once('value', snapshot => {
+      if (!snapshot.exists()) {
+        if (this.onStatusMessage) this.onStatusMessage('Oda bulunamadı!');
+        return;
+      }
+
+      if (this.onStatusMessage) this.onStatusMessage('Odaya katıldın!');
+      
+      // Katılma isteğini Host'a gönder
+      this.actionsRef.push({
+        type: 'PLAYER_JOIN',
+        player: this.localPlayer
       });
 
-      this.peer.on('open', () => {
-        console.log('[Client] Host bağlanılıyor:', hostPeerId);
-        this.hostConn = this.peer.connect(hostPeerId, { reliable: true });
-
-        this.hostConn.on('open', () => {
-          console.log('[Client] Host ile bağlantı kuruldu!');
-          if (this.onStatusMessage) this.onStatusMessage('Odaya katıldın! Hoş geldin.');
-          // Kendini Host'a tanıt
-          this.hostConn.send({
-            type: 'PLAYER_JOIN',
-            player: this.localPlayer
-          });
-        });
-
-        this.hostConn.on('data', (data) => {
-          this.handleHostMessage(data);
-        });
-
-        this.hostConn.on('close', () => {
-          if (this.onStatusMessage) this.onStatusMessage('Oda bağlantısı kesildi.');
-        });
-
-        this.hostConn.on('error', (err) => {
-          console.error('[HostConn Error]', err);
-          if (this.onStatusMessage) this.onStatusMessage('Bağlantı hatası: ' + err);
-        });
+      // Durum değişikliklerini dinle
+      this.stateRef.on('value', snap => {
+        const state = snap.val();
+        if (state) this.handleStateUpdate(state);
       });
 
-      this.peer.on('error', (err) => {
-        console.error('[Client Peer Error]', err);
-        if (this.onStatusMessage) this.onStatusMessage('Oda bulunamadı veya bağlantı kurulamadı!');
-      });
-    } catch (e) {
-      console.error('[Join Exception]', e);
-    }
-  }
-
-  // --- HOST: İSTEMCİ BAĞLANTISI GELDİĞİNDE ---
-  handleClientConnect(conn) {
-    this.connections.push(conn);
-
-    conn.on('data', (data) => {
-      this.handleClientMessage(conn, data);
-    });
-
-    conn.on('close', () => {
-      // Oyuncuyu çıkart
-      this.players = this.players.filter(p => p.connId !== conn.peer);
-      this.connections = this.connections.filter(c => c !== conn);
-      this.broadcastLobbyUpdate();
-      this.broadcastChat({
-        from: 'SİSTEM',
-        text: 'Bir oyuncu odadan ayrıldı.',
-        color: '#ff4d4d'
+      // Olayları (Event) dinle
+      this.eventsRef.on('child_added', snap => {
+        const event = snap.val();
+        this.handleEvent(event);
       });
     });
   }
 
-  // --- HOST: İSTEMCİDEN GELEN MESAJLAR ---
-  handleClientMessage(conn, data) {
-    if (!data || !data.type) return;
-
-    switch (data.type) {
+  // --- HOST: İSTEMCİ AKSİYONLARINI YÖNETME ---
+  handleClientAction(action, actionKey) {
+    if (!this.isHost) return;
+    
+    switch (action.type) {
       case 'PLAYER_JOIN': {
-        const p = data.player;
-        p.connId = conn.peer;
-        p.score = 0;
-        p.streak = 0;
-        p.isReady = true;
-        p.status = 'Hazır';
-
-        // İsmi aynı olan varsa sonuna numara ekle
+        const p = action.player;
+        p.score = 0; p.streak = 0; p.isReady = true; p.status = 'Hazır';
+        
         let name = p.name;
         let count = 1;
         while (this.players.some(x => x.name === name)) {
@@ -311,162 +246,109 @@ class NetworkManager {
         p.name = name;
 
         this.players.push(p);
-        this.broadcastLobbyUpdate();
-        this.broadcastChat({
-          from: 'SİSTEM',
-          text: `${p.name} odaya katıldı!`,
-          color: '#2ecc71'
+        this.updateState({ players: this.players });
+        
+        this.emitEvent('CHAT', {
+          message: { from: 'SİSTEM', text: `${p.name} odaya katıldı!`, color: '#2ecc71' }
         });
         break;
       }
-
-      case 'SUBMIT_GUESS': {
-        this.processGuess(data.playerId, data.guess);
+      case 'SUBMIT_GUESS':
+        this.processGuess(action.playerId, action.guess);
         break;
-      }
-
-      case 'SEND_REACTION': {
-        this.broadcastReaction(data.emoji, data.playerId);
+      case 'SEND_REACTION':
+        this.emitEvent('REACTION', { emoji: action.emoji, playerId: action.playerId });
         break;
-      }
-
       case 'SEND_CHAT': {
-        const sender = this.players.find(p => p.id === data.playerId);
+        const sender = this.players.find(p => p.id === action.playerId);
         if (sender) {
-          this.broadcastChat({
-            from: sender.name,
-            avatar: sender.avatar,
-            text: data.text,
-            color: sender.color
+          this.emitEvent('CHAT', {
+            message: { from: sender.name, avatar: sender.avatar, text: action.text, color: sender.color }
           });
         }
         break;
       }
     }
+    
+    // Aksiyon işlendikten sonra sil
+    if (this.actionsRef) this.actionsRef.child(actionKey).remove();
   }
 
-  // --- CLIENT: HOST'TAN GELEN MESAJLAR ---
-  handleHostMessage(data) {
-    if (!data || !data.type) return;
+  // --- DEVLET VE OLAY YÖNETİMİ ---
+  updateState(updates) {
+    if (this.isSinglePlayer) {
+      this.handleStateUpdate({ ...this.lastState, ...updates });
+      return;
+    }
+    if (this.stateRef) this.stateRef.update(updates);
+  }
 
-    switch (data.type) {
-      case 'LOBBY_UPDATE':
-        this.players = data.players;
-        this.roomSettings = data.settings;
-        if (this.onPlayerListUpdate) this.onPlayerListUpdate(this.players);
-        break;
+  emitEvent(type, payload) {
+    if (this.isSinglePlayer) {
+      this.handleEvent({ type, ...payload });
+      return;
+    }
+    if (this.eventsRef) {
+      this.eventsRef.push({ type, ...payload, timestamp: Date.now() });
+    }
+  }
 
-      case 'START_GAME':
-        if (this.onGameStateUpdate) this.onGameStateUpdate('PLAYING');
-        break;
+  handleStateUpdate(state) {
+    this.lastState = state;
+    if (state.players) {
+      this.players = state.players;
+      if (this.onPlayerListUpdate) this.onPlayerListUpdate(this.players);
+    }
+    if (state.settings) this.roomSettings = state.settings;
+    
+    if (state.gameState === 'PLAYING' && this.onGameStateUpdate) {
+      this.onGameStateUpdate('PLAYING');
+    }
+  }
 
+  handleEvent(event) {
+    switch (event.type) {
       case 'NEW_ROUND':
-        this.currentRound = data.round;
-        this.revealedLetters = data.revealedLetters;
+        this.currentRound = event.round;
+        this.revealedLetters = event.revealedLetters;
         if (this.onGameStateUpdate) {
-          this.onGameStateUpdate('NEW_ROUND', {
-            round: data.round,
-            totalRounds: data.totalRounds,
-            category: data.category,
-            hint: data.hint,
-            wordLength: data.wordLength,
-            revealedLetters: data.revealedLetters,
-            timer: data.timer
-          });
+          this.onGameStateUpdate('NEW_ROUND', event);
         }
         break;
-
       case 'LETTER_REVEAL':
-        this.revealedLetters = data.revealedLetters;
+        this.revealedLetters = event.revealedLetters;
         if (this.onLetterRevealed) {
-          this.onLetterRevealed(data.index, data.letter, data.revealedLetters);
+          this.onLetterRevealed(event.index, event.letter, event.revealedLetters);
         }
         break;
-
       case 'TIMER_TICK':
-        if (this.onGameStateUpdate) {
-          this.onGameStateUpdate('TIMER_TICK', {
-            roundTimer: data.roundTimer,
-            nextLetterIn: data.nextLetterIn
-          });
-        }
+        if (this.onGameStateUpdate) this.onGameStateUpdate('TIMER_TICK', event);
         break;
-
       case 'CORRECT_GUESS':
-        this.players = data.players;
-        if (this.onCorrectGuess) {
-          this.onCorrectGuess(data.winner, data.word, data.points, data.players);
-        }
+        if (this.onCorrectGuess) this.onCorrectGuess(event.winner, event.word, event.points, event.players);
         break;
-
       case 'ROUND_TIMEOUT':
-        this.players = data.players;
-        if (this.onRoundTimeout) {
-          this.onRoundTimeout(data.word, data.players);
-        }
+        if (this.onRoundTimeout) this.onRoundTimeout(event.word, event.players);
         break;
-
       case 'GAME_OVER':
-        this.players = data.players;
-        if (this.onGameOver) {
-          this.onGameOver(data.leaderboard);
-        }
+        if (this.onGameOver) this.onGameOver(event.leaderboard);
         break;
-
       case 'REACTION':
-        if (this.onReactionReceived) {
-          this.onReactionReceived(data.emoji, data.player);
-        }
+        const player = this.players.find(p => p.id === event.playerId);
+        if (this.onReactionReceived && player) this.onReactionReceived(event.emoji, player);
         break;
-
       case 'CHAT':
-        if (this.onChatMessage) {
-          this.onChatMessage(data.message);
-        }
+        if (this.onChatMessage) this.onChatMessage(event.message);
         break;
     }
   }
 
-  // --- HOST YAYIN FONKSİYONLARI ---
-  broadcast(data) {
-    this.connections.forEach(conn => {
-      if (conn && conn.open) {
-        conn.send(data);
-      }
-    });
-  }
-
-  broadcastLobbyUpdate() {
-    const payload = {
-      type: 'LOBBY_UPDATE',
-      players: this.players,
-      settings: this.roomSettings
-    };
-    this.broadcast(payload);
-    if (this.onPlayerListUpdate) this.onPlayerListUpdate(this.players);
-  }
-
-  broadcastChat(message) {
-    const payload = { type: 'CHAT', message };
-    this.broadcast(payload);
-    if (this.onChatMessage) this.onChatMessage(message);
-  }
-
-  broadcastReaction(emoji, playerId) {
-    const player = this.players.find(p => p.id === playerId);
-    const payload = { type: 'REACTION', emoji, player };
-    this.broadcast(payload);
-    if (this.onReactionReceived) this.onReactionReceived(emoji, player);
-  }
-
-  // --- OYUN AKIŞI YÖNETİMİ (HOST AUTHORITY) ---
+  // --- OYUN AKIŞI (SADECE HOST) ---
   startGame() {
     if (!this.isHost) return;
     this.currentRound = 0;
     this.players.forEach(p => { p.score = 0; p.streak = 0; p.status = 'Düşünüyor...'; });
-    this.broadcast({ type: 'START_GAME' });
-    if (this.onGameStateUpdate) this.onGameStateUpdate('PLAYING');
-
+    this.updateState({ gameState: 'PLAYING', players: this.players });
     this.nextRound();
   }
 
@@ -479,45 +361,31 @@ class NetworkManager {
       return;
     }
 
-    // Kelime seç
     const category = this.roomSettings.category || 'genel';
     this.currentWordData = getRandomWord(category);
-    const targetWord = toTurkishUpper(this.currentWordData.word);
-    this.targetWord = targetWord;
+    this.targetWord = toTurkishUpper(this.currentWordData.word);
 
-    this.revealedLetters = Array(targetWord.length).fill(null);
+    this.revealedLetters = Array(this.targetWord.length).fill(null);
     this.secondsToNextLetter = this.roomSettings.revealSpeed || 3;
-    this.roundTimer = targetWord.length * this.secondsToNextLetter + 5; // Toplam süre
+    this.roundTimer = this.targetWord.length * this.secondsToNextLetter + 5;
 
-    // İlk rastgele harfi hemen aç
-    const firstIdx = Math.floor(Math.random() * targetWord.length);
-    this.revealedLetters[firstIdx] = targetWord[firstIdx];
-
+    const firstIdx = Math.floor(Math.random() * this.targetWord.length);
+    this.revealedLetters[firstIdx] = this.targetWord[firstIdx];
     this.players.forEach(p => { p.status = 'Düşünüyor...'; });
 
-    const roundData = {
-      type: 'NEW_ROUND',
+    this.updateState({ players: this.players });
+    
+    this.emitEvent('NEW_ROUND', {
       round: this.currentRound,
       totalRounds: this.roomSettings.rounds,
       category: this.currentWordData.category || category,
       hint: this.currentWordData.hint,
-      wordLength: targetWord.length,
-      revealedLetters: [...this.revealedLetters],
+      wordLength: this.targetWord.length,
+      revealedLetters: this.revealedLetters,
       timer: this.secondsToNextLetter
-    };
+    });
 
-    this.broadcast(roundData);
-    if (this.onGameStateUpdate) {
-      this.onGameStateUpdate('NEW_ROUND', {
-        ...roundData,
-        targetWord: this.isSinglePlayer ? this.targetWord : null
-      });
-    }
-
-    // Harf açılma & Geri sayım döngüsü
     this.startRoundTicker();
-
-    // Bot simülasyonunu başlat
     this.scheduleBotGuesses();
   }
 
@@ -528,7 +396,6 @@ class NetworkManager {
       nextLetterCounter--;
 
       if (nextLetterCounter <= 0) {
-        // Yeni bir harf aç
         const unrevealed = [];
         for (let i = 0; i < this.targetWord.length; i++) {
           if (!this.revealedLetters[i]) unrevealed.push(i);
@@ -538,32 +405,18 @@ class NetworkManager {
           const randIdx = unrevealed[Math.floor(Math.random() * unrevealed.length)];
           this.revealedLetters[randIdx] = this.targetWord[randIdx];
 
-          const revealMsg = {
-            type: 'LETTER_REVEAL',
+          this.emitEvent('LETTER_REVEAL', {
             index: randIdx,
             letter: this.targetWord[randIdx],
-            revealedLetters: [...this.revealedLetters]
-          };
-          this.broadcast(revealMsg);
-          if (this.onLetterRevealed) {
-            this.onLetterRevealed(randIdx, this.targetWord[randIdx], this.revealedLetters);
-          }
+            revealedLetters: this.revealedLetters
+          });
         }
-
         nextLetterCounter = this.secondsToNextLetter;
       }
 
       this.roundTimer--;
+      this.emitEvent('TIMER_TICK', { roundTimer: this.roundTimer, nextLetterIn: nextLetterCounter });
 
-      const tickMsg = {
-        type: 'TIMER_TICK',
-        roundTimer: this.roundTimer,
-        nextLetterIn: nextLetterCounter
-      };
-      this.broadcast(tickMsg);
-      if (this.onGameStateUpdate) this.onGameStateUpdate('TIMER_TICK', tickMsg);
-
-      // Süre bitti mi veya tüm harfler açıldı mı?
       const allRevealed = this.revealedLetters.every(l => l !== null);
       if (this.roundTimer <= 0 || (allRevealed && nextLetterCounter <= 1)) {
         this.handleRoundTimeout();
@@ -577,33 +430,27 @@ class NetworkManager {
 
     const bots = this.players.filter(p => p.isBot);
     bots.forEach(bot => {
-      // Botun tahmin yapma olasılığı ve gecikmesi
       const minDelay = 2500 + Math.random() * 3000;
       const maxDelay = (this.targetWord.length * this.secondsToNextLetter * 1000) - 2000;
       const delay = Math.max(minDelay, Math.random() * maxDelay);
 
       const timeout = setTimeout(() => {
-        // Harf açılma oranına göre bot bilme ihtimali
         const revealedCount = this.revealedLetters.filter(x => x !== null).length;
         const ratio = revealedCount / this.targetWord.length;
         const chance = (bot.iq || 0.6) * (0.3 + ratio * 0.7);
 
         if (Math.random() < chance) {
-          // Bot doğru tahmin etti!
           this.processGuess(bot.id, this.targetWord);
-          // Bot sevinç emojisi atsın
           setTimeout(() => {
             const emojis = ['🔥', '😎', '🧠', '💯', '👑'];
-            this.broadcastReaction(emojis[Math.floor(Math.random() * emojis.length)], bot.id);
+            this.emitEvent('REACTION', { emoji: emojis[Math.floor(Math.random() * emojis.length)], playerId: bot.id });
           }, 400);
         }
       }, delay);
-
       this.botIntervals.push(timeout);
     });
   }
 
-  // --- TAHMİN KONTROLÜ (AUTHORITATIVE) ---
   processGuess(playerId, rawGuess) {
     if (!this.targetWord) return;
     const guess = toTurkishUpper(rawGuess);
@@ -611,10 +458,8 @@ class NetworkManager {
     if (!player) return;
 
     if (guess === this.targetWord) {
-      // DOĞRU TAHMİN!
       this.clearRoundTimers();
 
-      // Puan hesaplama: Ne kadar az harf açıldıysa ve ne kadar hızlıysa o kadar çok puan!
       const unrevealedCount = this.revealedLetters.filter(l => l === null).length;
       player.streak++;
       const multiplier = player.streak >= 4 ? 2.5 : (player.streak >= 2 ? 1.5 : 1.0);
@@ -624,7 +469,6 @@ class NetworkManager {
       player.score += totalPoints;
       player.status = `🎯 BİLDİ! (+${totalPoints})`;
 
-      // Diğer oyuncuların serisini sıfırla
       this.players.forEach(p => {
         if (p.id !== playerId) {
           p.streak = 0;
@@ -632,66 +476,28 @@ class NetworkManager {
         }
       });
 
-      const correctMsg = {
-        type: 'CORRECT_GUESS',
-        winner: player,
-        word: this.targetWord,
-        points: totalPoints,
-        players: this.players
-      };
-      this.broadcast(correctMsg);
-      if (this.onCorrectGuess) {
-        this.onCorrectGuess(player, this.targetWord, totalPoints, this.players);
-      }
+      this.updateState({ players: this.players });
+      this.emitEvent('CORRECT_GUESS', { winner: player, word: this.targetWord, points: totalPoints, players: this.players });
 
-      // 3.5 saniye sonra yeni tura geç
-      setTimeout(() => {
-        this.nextRound();
-      }, 3500);
-
+      setTimeout(() => this.nextRound(), 3500);
     } else {
-      // YANLIŞ TAHMİN
       player.status = '❌ Yanlış!';
-      this.broadcastLobbyUpdate();
+      this.updateState({ players: this.players });
     }
   }
 
   handleRoundTimeout() {
     this.clearRoundTimers();
-    this.players.forEach(p => {
-      p.streak = 0;
-      p.status = 'Süre Bitti!';
-    });
-
-    const timeoutMsg = {
-      type: 'ROUND_TIMEOUT',
-      word: this.targetWord,
-      players: this.players
-    };
-    this.broadcast(timeoutMsg);
-    if (this.onRoundTimeout) {
-      this.onRoundTimeout(this.targetWord, this.players);
-    }
-
-    setTimeout(() => {
-      this.nextRound();
-    }, 3500);
+    this.players.forEach(p => { p.streak = 0; p.status = 'Süre Bitti!'; });
+    this.updateState({ players: this.players });
+    this.emitEvent('ROUND_TIMEOUT', { word: this.targetWord, players: this.players });
+    setTimeout(() => this.nextRound(), 3500);
   }
 
   endGame() {
     this.clearRoundTimers();
-    // Sıralamayı puana göre yap
     const sorted = [...this.players].sort((a, b) => b.score - a.score);
-
-    const gameOverMsg = {
-      type: 'GAME_OVER',
-      leaderboard: sorted,
-      players: this.players
-    };
-    this.broadcast(gameOverMsg);
-    if (this.onGameOver) {
-      this.onGameOver(sorted);
-    }
+    this.emitEvent('GAME_OVER', { leaderboard: sorted });
   }
 
   clearRoundTimers() {
@@ -701,49 +507,27 @@ class NetworkManager {
     this.botIntervals = [];
   }
 
-  // --- İSTEMCİ EYLEMLERİ ---
+  // --- İSTEMCİ GÖNDERİMLERİ ---
   sendGuess(guessText) {
-    if (this.isHost) {
-      this.processGuess(this.myId, guessText);
-    } else if (this.hostConn && this.hostConn.open) {
-      this.hostConn.send({
-        type: 'SUBMIT_GUESS',
-        playerId: this.myId,
-        guess: guessText
-      });
-    }
+    if (this.isHost) this.processGuess(this.myId, guessText);
+    else if (this.actionsRef) this.actionsRef.push({ type: 'SUBMIT_GUESS', playerId: this.myId, guess: guessText });
   }
 
   sendReaction(emoji) {
-    if (this.isHost) {
-      this.broadcastReaction(emoji, this.myId);
-    } else if (this.hostConn && this.hostConn.open) {
-      this.hostConn.send({
-        type: 'SEND_REACTION',
-        playerId: this.myId,
-        emoji
-      });
-    }
+    if (this.isHost) this.emitEvent('REACTION', { emoji, playerId: this.myId });
+    else if (this.actionsRef) this.actionsRef.push({ type: 'SEND_REACTION', playerId: this.myId, emoji });
   }
 
   sendChatMessage(text) {
     if (!text.trim()) return;
     if (this.isHost) {
-      this.broadcastChat({
-        from: this.localPlayer.name,
-        avatar: this.localPlayer.avatar,
-        text: text.trim(),
-        color: this.localPlayer.color
+      this.emitEvent('CHAT', {
+        message: { from: this.localPlayer.name, avatar: this.localPlayer.avatar, text: text.trim(), color: this.localPlayer.color }
       });
-    } else if (this.hostConn && this.hostConn.open) {
-      this.hostConn.send({
-        type: 'SEND_CHAT',
-        playerId: this.myId,
-        text: text.trim()
-      });
+    } else if (this.actionsRef) {
+      this.actionsRef.push({ type: 'SEND_CHAT', playerId: this.myId, text: text.trim() });
     }
   }
 }
 
-// Global ağ yöneticisi
 const network = new NetworkManager();

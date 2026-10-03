@@ -1,5 +1,6 @@
 // ========================================================
-// WORD HUNT .IO - KELİME VERİTABANI
+// WORD HUNT .IO - KELİME VERİTABANI (GENİŞLETİLMİŞ v2)
+// ~200 kelime, 6 kategori
 // ========================================================
 
 const WORD_DATABASE = {
@@ -14,20 +15,40 @@ const WORD_DATABASE = {
     { word: "ASTRONOT", hint: "Uzay araştırmaları için uzaya giden kişi" },
     { word: "EFSANE", hint: "Dilden dile dolaşan olağanüstü hikaye" },
     { word: "MEŞALE", hint: "Ucu alevli aydınlatma sopası" },
-    { word: "GÖKKUŞAĞI", hint: "Yağmur sonrası gökyüzünde beliren 7 renkli yay" },
     { word: "PİRAMİT", hint: "Eski Mısır krallarının anıt mezarları" },
-    { word: "TELESKOP", hint: "Uzak yıldızları ve gök cisimlerini inceleyen araç" },
+    { word: "TELESKOP", hint: "Uzak yıldızları inceleyen optik araç" },
     { word: "ŞELALE", hint: "Yüksekten dökülen büyük su akıntısı" },
-    { word: "MUCİZE", hint: "İnsan aklının açıklamakta zorlandığı harika olay" },
+    { word: "MUCİZE", hint: "İnsan aklının açıklamakta zorlandığı olay" },
     { word: "MİMARİ", hint: "Yapı ve binaları tasarlama sanatı" },
-    { word: "OKYANUS", hint: "Kıtaları ayıran devasa tuzlu su kütlesi" }
+    { word: "OKYANUS", hint: "Kıtaları ayıran devasa tuzlu su kütlesi" },
+    { word: "SERÜVEN", hint: "Heyecanlı macera ve beklenmedik yolculuk" },
+    { word: "MAĞARA", hint: "Dağ veya kayalıklardaki doğal sığınak" },
+    { word: "FIRTINA", hint: "Şiddetli rüzgar ve yağmurlu hava durumu" },
+    { word: "KRISTAL", hint: "Saydam ve parlak mineral veya cam" },
+    { word: "MANZARA", hint: "Geniş ve güzel doğal görünüm" },
+    { word: "UÇURUM", hint: "Çok derin ve tehlikeli dik yamaç" },
+    { word: "KARANLIK", hint: "Işığın olmadığı veya az olduğu durum" },
+    { word: "MACERA", hint: "Heyecan ve tehlike içeren girişim" },
+    { word: "KAHRAMAN", hint: "Tehlikeyi göze alarak cesurca davranan kişi" },
+    { word: "DESTAN", hint: "Kahramanlık hikayelerini anlatan uzun manzume" },
+    { word: "TAPINAK", hint: "İbadet için yapılmış kutsal yapı" },
+    { word: "SERAP", hint: "Çölde sıcaktan oluşan yalancı su görüntüsü" },
+    { word: "İSKELET", hint: "Canlı vücudunu oluşturan kemik yapısı" },
+    { word: "KALE", hint: "Savunma amacıyla inşa edilmiş tahkimli yapı" },
+    { word: "MİNARE", hint: "Caminin ezan okunan ince uzun kulesi" },
+    { word: "HANÇER", hint: "Kısa ve keskin iki taraflı bıçak" },
+    { word: "GÖLGE", hint: "Işığın engellendiği karanlık alan" },
+    { word: "FENERBAHÇESİ", hint: "İstanbul'un Kadıköy yakasındaki büyük spor kulübü" },
+    { word: "SAVAŞÇI", hint: "Savaşta dövüşen asker veya silahşor" },
+    { word: "BÜYÜCÜ", hint: "Sihir ve büyü yapan gizemli kişi" },
+    { word: "KORSANLIK", hint: "Denizlerde yapılan yağma ve talan eylemi" },
+    { word: "PRENSES", hint: "Kralın veya kraliçenin kız çocuğu" }
   ],
   teknoloji: [
     { word: "ALGORİTMA", hint: "Bir problemi çözmek için izlenen adımlar bütünü" },
     { word: "YAZILIM", hint: "Bilgisayarı çalıştıran program ve kodlar" },
-    { word: "VERİTABANI", hint: "Bilgilerin düzenli saklandığı dijital sistem" },
     { word: "İNTERNET", hint: "Dünya çapındaki dev bilgisayar ağı" },
-    { word: "SUNUCU", hint: "Ağ üzerindeki diğer cihazlara hizmet veren ana bilgisayar" },
+    { word: "SUNUCU", hint: "Ağdaki diğer cihazlara hizmet veren ana bilgisayar" },
     { word: "PİKSEL", hint: "Dijital ekrandaki en küçük renkli nokta" },
     { word: "ROBOTİK", hint: "Otomatik makineler ve yapay zeka bilimi" },
     { word: "KODLAMA", hint: "Bilgisayara komut yazma eylemi" },
@@ -36,7 +57,24 @@ const WORD_DATABASE = {
     { word: "GÜVENLİK", hint: "Siber saldırılara karşı koruma kalkanı" },
     { word: "KULAKLIK", hint: "Sesi sadece dinleyene ileten ses aygıtı" },
     { word: "GRAFİK", hint: "Görsel çizim ve oyun render bileşenleri" },
-    { word: "BATARYA", hint: "Taşınabilir cihazların kimyasal enerji deposu" }
+    { word: "BATARYA", hint: "Taşınabilir cihazların kimyasal enerji deposu" },
+    { word: "ŞİFRELEME", hint: "Veriyi yetkisiz erişime karşı gizleme yöntemi" },
+    { word: "OTOMASYON", hint: "Süreçlerin makine ile otomatik yürütülmesi" },
+    { word: "DONANIM", hint: "Bilgisayarın elle tutulur fiziksel parçaları" },
+    { word: "BELLEK", hint: "Bilgisayarın geçici verileri sakladığı RAM birimi" },
+    { word: "TARAYICI", hint: "Web sitelerine erişilen browser yazılımı" },
+    { word: "İŞLEMCİ", hint: "Bilgisayarın beyin görevi gören ana çipi" },
+    { word: "UYGULAMA", hint: "Telefon veya bilgisayarda çalışan yazılım" },
+    { word: "PROGRAM", hint: "Belirli görevi yerine getiren kod bütünü" },
+    { word: "ARAYÜZ", hint: "Kullanıcının sistemle etkileştiği ekran katmanı" },
+    { word: "BULUT", hint: "İnternette depolama ve işlem hizmeti sunan sistem" },
+    { word: "SİMÜLASYON", hint: "Gerçek ortamın bilgisayar modeliyle taklit edilmesi" },
+    { word: "SENSÖR", hint: "Çevresel değişimleri algılayan elektronik algılayıcı" },
+    { word: "DRONE", hint: "Uzaktan kumandalı insansız hava aracı" },
+    { word: "HOLOGRAM", hint: "Üç boyutlu ışık görüntüsü üreten teknoloji" },
+    { word: "ŞARİT", hint: "Veri kablosu veya manyetik kayıt bandı" },
+    { word: "MODEM", hint: "İnternet sinyalini dönüştüren ağ cihazı" },
+    { word: "TABLET", hint: "Dokunmatik ekranlı taşınabilir bilgisayar" }
   ],
   populer: [
     { word: "BALATRO", hint: "Poker kartları ve jokerlerle oynanan roguelike hit" },
@@ -45,23 +83,59 @@ const WORD_DATABASE = {
     { word: "MATRİX", hint: "Gerçekliğin bir simülasyon olduğunu anlatan kült film" },
     { word: "KARAKTER", hint: "Film veya oyundaki canlandırılan kişi" },
     { word: "SENARYO", hint: "Bir filmin yazılı kurgu ve diyalog metni" },
-    { word: "JOYSTİCK", hint: "Oyunlarda yön kontrolü sağlayan kol" },
     { word: "ARCADE", hint: "Jetonla çalışan nostaljik atari salonu oyunları" },
-    { word: "SÜPERKAHRAMAN", hint: "Özel güçleriyle dünyayı kurtaran çizgi roman figürü" },
     { word: "DİSKOTEK", hint: "Dans edilen neon ışıklı nostaljik kulüp" },
-    { word: "FESTİVAL", hint: "Müzik ve eğlence dolu büyük kutlama etkinliği" }
+    { word: "FESTİVAL", hint: "Müzik ve eğlence dolu büyük kutlama etkinliği" },
+    { word: "MINECRAFT", hint: "Blok blok dünyalar inşa eden sandbox oyunu" },
+    { word: "FORTNITE", hint: "100 kişilik battle royale hayatta kalma oyunu" },
+    { word: "JOKER", hint: "Güldürürken dehşet saçan kült kötü adam karakteri" },
+    { word: "AVATAR", hint: "Oyun veya internetteki sanal kimlik görüntüsü" },
+    { word: "STREAMER", hint: "Oyununu canlı yayınla izleyicilere aktaran kişi" },
+    { word: "PLATFORM", hint: "Engelleri atlayarak ilerlenilen 2D oyun türü" },
+    { word: "ANİMASYON", hint: "Hareketli çizgi film sanatı" },
+    { word: "TURNUVA", hint: "Spor veya oyun yarışmalarının büyük organizasyonu" },
+    { word: "GALAKSI", hint: "Milyarlarca yıldızdan oluşan dev uzay sistemi" },
+    { word: "PORTAL", hint: "Bir boyuttan diğerine geçiş kapısı" },
+    { word: "POKEMON", hint: "Cep canavarlarını yakalayıp eğiten Japon oyunu" },
+    { word: "NİNJA", hint: "Gizlice hareket eden Japon savaşçısı" },
+    { word: "ZOMBİ", hint: "Mezardan kalkan yaşayan ölü" },
+    { word: "DRAGON", hint: "Ateş püskürten kanatlı efsanevi yaratık" },
+    { word: "SAMURAİ", hint: "Onurlu ve yiğit Japon savaşçısı" },
+    { word: "COSPLAY", hint: "Film veya oyun karakterine bürünme kültürü" },
+    { word: "RETRO", hint: "Nostaljik eski tarz oyun ve kültür akımı" },
+    { word: "KORKU", hint: "Seyirciyi korkutmayı amaçlayan film türü" },
+    { word: "EJDERHA", hint: "Efsanelerdeki ateş soluklu kanatlı dev sürüngen" },
+    { word: "VİKİNG", hint: "İskandinav kökenli savaşçı ve kaşif halkı" }
   ],
   hayvanlar: [
-    { word: "PENGUEN", hint: "Kutup soğuklarında yaşayan, uçamayan sevimli kuş" },
+    { word: "PENGUEN", hint: "Kutup soğuklarında yaşayan uçamayan sevimli kuş" },
     { word: "TİMSAH", hint: "Nehirlerde pusu kuran zırhlı dev sürüngen" },
     { word: "JAGUAR", hint: "Güney Amerika'nın güçlü benekli yırtıcı kedisi" },
     { word: "KARTAL", hint: "Keskin gözlü, göklerin avcı hükümdarı" },
     { word: "BUKALEMUN", hint: "Bulunduğu ortama göre renk değiştiren kertenkele" },
-    { word: "KANGURU", hint: "Yavrularını kesesinde taşıyan zıplayan Avustralya memelisi" },
+    { word: "KANGURU", hint: "Yavrularını kesesinde taşıyan zıplayan memeli" },
     { word: "YUNUS", hint: "Denizlerin en zeki ve dost canlısı memelisi" },
     { word: "AHTAPOT", hint: "Sekiz kollu, mürekkep püskürten deniz canlısı" },
     { word: "LEOPAR", hint: "Ağaçlara tırmanabilen hızlı benekli büyük kedi" },
-    { word: "PELİKAN", hint: "Gagasının altında dev balık kesesi olan su kuşu" }
+    { word: "PELİKAN", hint: "Gagasının altında dev balık kesesi olan su kuşu" },
+    { word: "GERGEDAN", hint: "Burnunda boynuzu olan kalın derili dev memeli" },
+    { word: "FLAMINGO", hint: "Pembe rengi ve tek ayak üstünde durmasıyla ünlü kuş" },
+    { word: "LEMUR", hint: "Madagaskar'a özgü büyük gözlü primat" },
+    { word: "ÇITA", hint: "Dünyanın en hızlı kara hayvanı" },
+    { word: "AKBABA", hint: "Ölü hayvanlarla beslenen büyük leş kuşu" },
+    { word: "SALYANGOZ", hint: "Evini sırtında taşıyan yavaş yumuşakça" },
+    { word: "YENGEÇ", hint: "Yan yürüyüşüyle tanınan kabuklu deniz canlısı" },
+    { word: "KARINCA", hint: "Koloni halinde yaşayan güçlü küçük böcek" },
+    { word: "BAYKUŞ", hint: "Geceleri avlanan, başını 270 derece çeviren kuş" },
+    { word: "ZEHİRLİYILAN", hint: "Isırığıyla zehir enjekte eden uzun sürüngen" },
+    { word: "PAPAĞAN", hint: "Konuşmayı taklit edebilen renkli tropik kuş" },
+    { word: "KÖPEKBALIGI", hint: "Okyanusların en tehlikeli yırtıcı balığı" },
+    { word: "KAPLUMBAĞA", hint: "Kabuğuyla korunan yavaş ve uzun ömürlü sürüngen" },
+    { word: "TAVUSKUŞU", hint: "Gösterişli renkli kuyruk tüyleriyle ünlü kuş" },
+    { word: "KOALA", hint: "Okaliptüs ağacında yaşayan Avustralyalı sevimli memeli" },
+    { word: "GORİL", hint: "En büyük ve güçlü primat, dağ ormanlarında yaşar" },
+    { word: "PANDA", hint: "Siyah beyaz tüylü, bambu seven Çin ayısı" },
+    { word: "HAMSTER", hint: "Yanaklarında yiyecek biriktiren küçük kemirgen" }
   ],
   yemek: [
     { word: "LAHMACUN", hint: "İnce çıtır hamur üzerine kıymalı harçla fırınlanan lezzet" },
@@ -70,9 +144,28 @@ const WORD_DATABASE = {
     { word: "KÜNEFE", hint: "Peynirli, tel kadayıflı, sıcak sıcak yenen tatlı" },
     { word: "MAKARNA", hint: "İtalyan mutfağının vazgeçilmez soslu yemeği" },
     { word: "ÇİKOLATA", hint: "Kakaodan yapılan dünyanın en popüler tatlısı" },
-    { word: "MENEMEN", hint: "Domates, biber ve yumurtayla yapılan kahvaltı klasiği" },
-    { word: "İSKENDER", hint: "Pide üstüne döner, tereyağı ve yoğurtlu ziyafet" },
-    { word: "KOKTEYL", hint: "Farklı aromalı içeceklerin karışımı" }
+    { word: "MENEMEN", hint: "Domates biber ve yumurtayla yapılan kahvaltı klasiği" },
+    { word: "İSKENDER", hint: "Pide üstüne döner tereyağı ve yoğurtlu ziyafet" },
+    { word: "KOKTEYL", hint: "Farklı aromalı içeceklerin karışımı" },
+    { word: "HAMBURGER", hint: "Ekmek arası köfteli Amerikan fast food klasiği" },
+    { word: "KUMPIR", hint: "Fırında pişirilip içine malzeme doldurulan patates" },
+    { word: "BÖREK", hint: "Yufka içine peynir veya ıspanak doldurulan fırın lezzeti" },
+    { word: "PILAV", hint: "Tereyağıyla sotelenmiş pirinç yemeği" },
+    { word: "KEBAP", hint: "Mangalda veya şişte pişirilen et yemeği" },
+    { word: "DOLMA", hint: "Asma yaprağı ya da biberle sarılmış pirinçli lezzet" },
+    { word: "FALAFEL", hint: "Nohuttan yapılan Orta Doğu köftesi" },
+    { word: "SİMİT", hint: "Susam kaplı Türk sokak simgesi çöreği" },
+    { word: "POĞAÇA", hint: "İçi peynir veya zeytinli fırın hamur işi" },
+    { word: "TANTUNI", hint: "Yufka içinde baharatlı et parçalı Mersin lezzeti" },
+    { word: "MANTARLI", hint: "Ormandan toplanan şapkalı mantarla yapılan yemek" },
+    { word: "WAFFLE", hint: "Petek desenli tatlı hamurdan yapılan Belçika lezzeti" },
+    { word: "SUSHI", hint: "Japon mutfağından pirinç ve çiğ balıklı lezzet" },
+    { word: "TIRAMISU", hint: "Kahve ve mascarpone kremalı İtalyan tatlısı" },
+    { word: "GAZPACHO", hint: "Soğuk servis edilen İspanyol domates çorbası" },
+    { word: "PİZZA", hint: "Üzerine peynir ve malzeme eklenen İtalyan hamur işi" },
+    { word: "KREP", hint: "Fransız mutfağından ince hamur gözleme tatlısı" },
+    { word: "ÇORBA", hint: "Sıcak servis edilen sıvı yemek türü" },
+    { word: "SARMA", hint: "Yaprak veya lahanayla sarılmış pirinçli yemek" }
   ],
   kisa: [
     { word: "DANS", hint: "Müzik ritmine göre yapılan vücut hareketleri" },
@@ -80,10 +173,31 @@ const WORD_DATABASE = {
     { word: "ATEŞ", hint: "Isı ve ışık veren kızıl alev" },
     { word: "SKOR", hint: "Oyunda kazanılan toplam puan" },
     { word: "ZEKA", hint: "Akıl yürütme ve kavrama yeteneği" },
-    { word: "PARI", hint: "Işıldama, parlama hali" },
     { word: "KART", hint: "Oyunlarda kullanılan destedeki parça" },
     { word: "ROKET", hint: "Uzaya fırlatılan itici araç" },
-    { word: "YILDIZ", hint: "Geceleri gökte parıldayan gök cismi" }
+    { word: "YILDIZ", hint: "Geceleri gökte parıldayan gök cismi" },
+    { word: "BOMBA", hint: "Patlayıcı madde içeren tehlikeli nesne" },
+    { word: "FENER", hint: "Taşınabilir ışık kaynağı veya deniz kulesi" },
+    { word: "KANCA", hint: "Bir şeyi çekmek için kıvrık metal parça" },
+    { word: "TUZAK", hint: "Düşman yakalamak için kurulan gizli düzenek" },
+    { word: "KALKAN", hint: "Savunmada kullanılan koruyucu plaka" },
+    { word: "DENGE", hint: "İki tarafın eşit ağırlıkta tutulma hali" },
+    { word: "HAMLE", hint: "Satranç veya oyunda yapılan tek hareket" },
+    { word: "ZIRH", hint: "Savaşta vücudu koruyan metal giysi" },
+    { word: "SİHİR", hint: "Doğaüstü güçlerle gerçekleşen mucizevi eylem" },
+    { word: "BÜYÜ", hint: "Bir kişiyi etkileyen gizemli güç" },
+    { word: "RÜYA", hint: "Uyku sırasında görülen canlı zihinsel görüntüler" },
+    { word: "PUAN", hint: "Oyun veya sınavda kazanılan sayısal değer" },
+    { word: "TURBO", hint: "Motor gücünü artıran hava sıkıştırma sistemi" },
+    { word: "LAZER", hint: "Odaklanmış yoğun ışık demeti" },
+    { word: "NEON", hint: "Parlak renkli gaz ışığı veya tabela" },
+    { word: "RADAR", hint: "Radyo dalgalarıyla uzaktaki nesneleri tespit eden sistem" },
+    { word: "EKSEN", hint: "Dönme hareketinin merkezindeki hayali çizgi" },
+    { word: "SONAR", hint: "Ses dalgalarıyla su altını tarayan cihaz" },
+    { word: "TITAN", hint: "Yunan mitolojisindeki devasa güçlü varlık" },
+    { word: "ATLAS", hint: "Dünya haritalarından oluşan büyük kitap" },
+    { word: "KAOS", hint: "Tam bir düzensizlik ve karışıklık hali" },
+    { word: "EJDER", hint: "Ateş soluyan efsanevi kanatlı yaratık" }
   ]
 };
 
@@ -91,18 +205,14 @@ const WORD_DATABASE = {
 function getRandomWord(category = 'genel', excludedWords = []) {
   let pool = [];
   if (category === 'all' || !WORD_DATABASE[category]) {
-    // Tüm kategorileri birleştir
     Object.keys(WORD_DATABASE).forEach(cat => {
       pool = pool.concat(WORD_DATABASE[cat].map(item => ({ ...item, category: cat })));
     });
   } else {
     pool = WORD_DATABASE[category].map(item => ({ ...item, category }));
   }
-
-  // Henüz sorulmamış kelimeleri filtrele
   const available = pool.filter(item => !excludedWords.includes(item.word));
   const selectionList = available.length > 0 ? available : pool;
-  
   const chosen = selectionList[Math.floor(Math.random() * selectionList.length)];
   return chosen;
 }

@@ -6,11 +6,16 @@ class GameController {
   constructor() {
     this.currentView = 'menu';
     this.avatars = [
-      '🎯', '🧩', '🔤', '🃏', '🕹️', '💡', '🔮', '📖',
-      '🧠', '🎭', '🔑', '💎', '🏆', '⚡', '🌀', '🔥',
-      '🪩', '🎲', '🎪', '🎨', '🛸', '🔭', '💠', '🧬'
+      'assets/avatars/gamergirl.jpg',
+      'assets/avatars/coolcat.jpg',
+      'assets/avatars/wizard.jpg',
+      'assets/avatars/pirate.jpg',
+      'assets/avatars/shadow.jpg',
+      'assets/avatars/jester.jpg',
+      '👑', '👽', '🐶', '🧙‍♀️', '🎯', '🪩'
     ];
-    this.selectedAvatar = '🎯';
+    this.selectedAvatar = 'assets/avatars/gamergirl.jpg';
+    this.avatarScrollPos = 0;
     this.selectedColor = '#ff007f';
     this.isCrtEnabled = true;
     this.isSfxEnabled = true;
@@ -120,19 +125,16 @@ class GameController {
       network.localPlayer.avatar = savedAvatar;
     }
 
-    const badge = document.getElementById('current-avatar-badge');
-    if (badge) badge.innerText = this.selectedAvatar;
-
-    // Avatar ızgarasını doldur
-    const grid = document.getElementById('avatar-grid');
-    if (grid) {
-      grid.innerHTML = '';
+    // Avatar carousel doldur
+    const track = document.getElementById('avatar-track');
+    if (track) {
+      track.innerHTML = '';
       this.avatars.forEach(av => {
-        const btn = document.createElement('button');
-        btn.className = `avatar-option ${av === this.selectedAvatar ? 'selected' : ''}`;
-        btn.innerText = av;
-        btn.onclick = () => this.selectAvatar(av);
-        grid.appendChild(btn);
+        const item = document.createElement('div');
+        item.className = `avatar-item ${av === this.selectedAvatar ? 'selected' : ''}`;
+        item.innerHTML = this.renderAvatarHTML(av);
+        item.onclick = () => this.selectAvatar(av);
+        track.appendChild(item);
       });
     }
 
@@ -152,20 +154,37 @@ class GameController {
     localStorage.setItem('wh_avatar', av);
     network.localPlayer.avatar = av;
 
-    const badge = document.getElementById('current-avatar-badge');
-    if (badge) {
-      badge.innerText = av;
-      gsap.fromTo(badge, { scale: 0.5, rotate: -20 }, { scale: 1, rotate: 0, duration: 0.3, ease: 'back.out(2)' });
-    }
-
-    const grid = document.getElementById('avatar-grid');
-    if (grid) {
-      Array.from(grid.children).forEach(child => {
-        child.classList.toggle('selected', child.innerText === av);
+    const track = document.getElementById('avatar-track');
+    if (track) {
+      Array.from(track.children).forEach((child, idx) => {
+        child.classList.toggle('selected', this.avatars[idx] === av);
       });
     }
 
     sound.playTileFlip(2);
+  }
+
+  renderAvatarHTML(av) {
+    if (av.includes('.jpg') || av.includes('.png')) {
+      return `<img src="${av}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+    }
+    return av;
+  }
+
+  scrollAvatars(dir) {
+    const track = document.getElementById('avatar-track');
+    if (!track) return;
+    
+    // Each item is ~75px wide with gap
+    this.avatarScrollPos += dir * 150;
+    
+    // Bounds check
+    const maxScroll = Math.max(0, track.scrollWidth - track.parentElement.clientWidth);
+    if (this.avatarScrollPos < 0) this.avatarScrollPos = 0;
+    if (this.avatarScrollPos > maxScroll) this.avatarScrollPos = maxScroll;
+
+    gsap.to(track, { x: -this.avatarScrollPos, duration: 0.3, ease: 'power2.out' });
+    sound.playTileFlip(0);
   }
 
   randomizeNickname() {

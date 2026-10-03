@@ -10,10 +10,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;900&family=Press+Start+2P&family=Rajdhani:wght@600;700;900&display=swap" rel="stylesheet">
   
-  <!-- LIBRARIES: GSAP, CANVAS-CONFETTI, PEERJS -->
+  <!-- LIBRARIES: GSAP, CANVAS-CONFETTI -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
-  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  
+  <!-- FIREBASE SDK (For Realtime Multiplayer) -->
+  <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-database-compat.js"></script>
 
   <!-- STYLES -->
   <link rel="stylesheet" href="style.css">
@@ -44,48 +47,56 @@
   <main class="main-wrapper">
 
     <!-- 1. GİRİŞ VE PROFİL EKRANI -->
-    <section class="view-card active" id="view-menu">
-      <div>
-        <h1 class="game-hero-title">WORD HUNT</h1>
-        <p class="hero-subtitle">Çok Oyunculu Canlı Kelime Düellosu</p>
+    <section class="view-card active menu-layout" id="view-menu">
+      <div class="menu-header">
+        <div class="header-floating-text left">👑<br>Doğru<br>Kelime<br>Zaferi<br>Getirir!</div>
+        <h1 class="word-hunter-title">
+          <span class="word">WORD</span>
+          <span class="hunter">HUNTER</span>
+        </h1>
+        <div class="header-floating-text right">👑<br>Kelimeler<br>Seni<br>Bekliyor!</div>
       </div>
 
       <!-- PROFİL VE AVATAR -->
-      <div class="profile-box">
-        <div class="avatar-preview-wrapper">
-          <div class="avatar-big-badge" id="current-avatar-badge" title="Avatar Değiştir">🎯</div>
-          <div style="text-align: left; flex: 1;">
-            <div style="font-size: 11px; color: var(--accent-gold); font-family: var(--font-arcade); margin-bottom: 4px;">KELIME AVCISI PROFİLİ</div>
-            <div style="font-size: 13px; color: #8b949e;">Bir avatar ve lakap seç, düelloya katıl!</div>
+      <div class="profile-box menu-profile-box">
+        <div class="profile-title">→ PROFİLİNİ SEÇ ←</div>
+        
+        <!-- AVATAR CAROUSEL -->
+        <div class="avatar-carousel">
+          <button class="carousel-btn left" onclick="game.scrollAvatars(-1)">❮</button>
+          <div class="avatar-track-container">
+            <div class="avatar-track" id="avatar-track">
+              <!-- JS ile doldurulacak -->
+            </div>
           </div>
+          <button class="carousel-btn right" onclick="game.scrollAvatars(1)">❯</button>
         </div>
 
-        <!-- AVATAR SEÇİM LİSTESİ -->
-        <div class="avatar-grid" id="avatar-grid">
-          <!-- JS ile doldurulacak -->
-        </div>
-
-        <div class="name-input-row">
-          <input type="text" class="stylish-input" id="nickname-input" placeholder="LAKABINI YAZ..." maxlength="14" autocomplete="off">
+        <div class="name-input-row menu-name-row">
+          <span class="input-icon">👤</span>
+          <input type="text" class="stylish-input" id="nickname-input" placeholder="Nickname Giriniz..." maxlength="14" autocomplete="off">
           <button class="dice-btn" onclick="game.randomizeNickname()" title="Rastgele İsim Üret">🎲</button>
         </div>
       </div>
 
       <!-- OYUN MODU BUTONLARI -->
-      <div class="menu-actions">
-        <button class="action-btn btn-single" onclick="game.startSinglePlayer()">
-          <span>🧠</span>
-          <span>TEK OYUNCULU (BOTLARLA)</span>
+      <div class="menu-actions new-menu-actions">
+        <button class="menu-card-btn blue" onclick="game.startSinglePlayer()">
+          <div class="btn-icon">👤</div>
+          <div class="btn-title">SINGLE PLAYER</div>
+          <div class="btn-desc">KENDİ BAŞINA<br>KELİMELERİ KEŞFET</div>
         </button>
 
-        <button class="action-btn btn-create" onclick="game.showView('create-room')">
-          <span>🔤</span>
-          <span>ODA KUR (CREATE ROOM)</span>
+        <button class="menu-card-btn purple" onclick="game.showView('create-room')">
+          <div class="btn-icon">👥</div>
+          <div class="btn-title">MULTI PLAYER</div>
+          <div class="btn-desc">ARKADAŞLARINLA<br>YARIŞ</div>
         </button>
 
-        <button class="action-btn btn-join" onclick="game.showView('join-room')">
-          <span>🎯</span>
-          <span>ODAYA KATIL (KOD İLE)</span>
+        <button class="menu-card-btn green" onclick="game.showView('join-room')">
+          <div class="btn-icon">🔗</div>
+          <div class="btn-title">KOD İLE<br>KATILIM</div>
+          <div class="btn-desc">ÖZEL BİR ODAYA<br>KATIL</div>
         </button>
       </div>
     </section>
