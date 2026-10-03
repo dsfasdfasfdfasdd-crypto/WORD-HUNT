@@ -6,15 +6,9 @@ class GameController {
   constructor() {
     this.currentView = 'menu';
     this.avatars = [
-      'assets/avatars/gamergirl.jpg',
-      'assets/avatars/coolcat.jpg',
-      'assets/avatars/wizard.jpg',
-      'assets/avatars/pirate.jpg',
-      'assets/avatars/shadow.jpg',
-      'assets/avatars/jester.jpg',
-      '👑', '👽', '🐶', '🧙‍♀️', '🎯', '🪩'
+      '👑', '👽', '🐶', '🧙‍♀️', '🎯', '🪩', '🤖', '👾', '👻', '🦊', '🐯', '🦄'
     ];
-    this.selectedAvatar = 'assets/avatars/gamergirl.jpg';
+    this.selectedAvatar = '👑';
     this.avatarScrollPos = 0;
     this.selectedColor = '#ff007f';
     this.isCrtEnabled = true;
@@ -447,6 +441,11 @@ class GameController {
   handleCorrectGuessUI(winner, word, points, players) {
     const isMe = winner.id === network.localPlayer.id;
 
+    const guessInput = document.getElementById('game-guess-input');
+    if (guessInput) {
+      guessInput.disabled = true;
+    }
+
     // Kartların tamamını göster
     for (let i = 0; i < word.length; i++) {
       const card = document.getElementById(`card-${i}`);
@@ -489,6 +488,11 @@ class GameController {
     sound.playWrongGuess();
     this.showToast(`⏳ Süre Doldu! Kelime: ${word}`);
 
+    const guessInput = document.getElementById('game-guess-input');
+    if (guessInput) {
+      guessInput.disabled = true;
+    }
+
     for (let i = 0; i < word.length; i++) {
       const card = document.getElementById(`card-${i}`);
       if (card) {
@@ -510,6 +514,40 @@ class GameController {
 
     const podium = document.getElementById('podium-container');
     if (!podium) return;
+
+    if (network.isSinglePlayer) {
+      network.submitGlobalScore(network.localPlayer);
+      podium.innerHTML = '<div style="color:#fff; text-align:center; padding: 20px;">Günlük Skor Tablosu Yükleniyor...</div>';
+      
+      setTimeout(() => {
+        network.getDailyScores((scores) => {
+          podium.innerHTML = '<h3 style="color:var(--accent-gold); margin-bottom: 15px; font-family: var(--font-arcade); font-size: 16px;">🌍 GÜNLÜK TOP 10 🌍</h3>';
+          const list = document.createElement('div');
+          list.style.display = 'flex'; list.style.flexDirection = 'column'; list.style.gap = '10px'; list.style.width = '100%'; list.style.maxWidth = '400px'; list.style.margin = '0 auto';
+          
+          scores.forEach((s, i) => {
+            const isMe = s.name === network.localPlayer.name && s.score === network.localPlayer.score;
+            const item = document.createElement('div');
+            item.style.display = 'flex'; item.style.alignItems = 'center'; item.style.justifyContent = 'space-between'; 
+            item.style.background = isMe ? 'rgba(0, 240, 255, 0.2)' : 'rgba(255,255,255,0.1)'; 
+            item.style.border = isMe ? '1px solid var(--accent-cyan)' : '1px solid transparent';
+            item.style.padding = '10px 15px'; item.style.borderRadius = '8px';
+            item.innerHTML = `
+              <div style="display:flex; align-items:center; gap: 10px;">
+                <span style="font-weight:bold; color:var(--accent-cyan); width:20px;">#${i+1}</span>
+                <div style="width:30px; height:30px;">${game.renderAvatarHTML(s.avatar)}</div>
+                <span>${s.name}</span>
+              </div>
+              <span style="font-weight:bold; color:var(--accent-gold);">${s.score} P</span>
+            `;
+            list.appendChild(item);
+          });
+          if (scores.length === 0) list.innerHTML = '<div style="color:#8b949e; text-align:center;">Henüz skor kaydedilmedi. İlk sen ol!</div>';
+          podium.appendChild(list);
+        });
+      }, 1000);
+      return;
+    }
 
     podium.innerHTML = '';
     const top3 = leaderboard.slice(0, 3);

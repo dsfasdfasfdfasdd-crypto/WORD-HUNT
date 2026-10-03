@@ -1162,6 +1162,12 @@ body {
   gap: 20px;
 }
 
+@media (max-width: 768px) {
+  .new-menu-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
 .menu-card-btn {
   background: rgba(13, 17, 23, 0.9);
   border: 2px solid transparent;

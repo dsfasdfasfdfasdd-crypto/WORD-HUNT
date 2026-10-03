@@ -2,10 +2,6 @@
 // WORD HUNT .IO - NETWORKING & MULTIPLAYER ENGINE (FIREBASE)
 // ========================================================
 
-// ⚠️ DİKKAT: MULTIPLAYER'IN ÇALIŞMASI İÇİN KENDİ FIREBASE BİLGİLERİNİ BURAYA GİRMELİSİN ⚠️
-// 1. firebase.google.com adresine git ve ücretsiz bir proje oluştur.
-// 2. Realtime Database oluştur (Test modunda).
-// 3. Proje ayarlarından "Web Uygulaması" ekle ve sana verilen Config nesnesini aşağıya yapıştır!
 const firebaseConfig = {
   apiKey: "AIzaSyBkXj7oYHgDFnEuXvHKmTFiMDGQSZ1ueJk",
   authDomain: "word-hunter-dc231.firebaseapp.com",
@@ -60,7 +56,9 @@ class NetworkManager {
     this.roundTimer = 0;
     this.roundInterval = null;
     this.secondsToNextLetter = 3;
-    this.botIntervals = [];
+    
+    this.roundActive = false;
+    this.usedWords = [];
 
     // Callbacks
     this.onPlayerListUpdate = null;
@@ -149,48 +147,47 @@ class NetworkManager {
     return this.roomCode;
   }
 
-  // --- TEK OYUNCULU MOD (BOTLARLA) ---
-  startSinglePlayer(botCount = 2, settings = {}) {
+  // --- TEK OYUNCULU MOD (SONSUZ DÖNGÜ) ---
+  startSinglePlayer(settings = {}) {
     this.isHost = true;
     this.isSinglePlayer = true;
-    this.roomSettings = { ...this.roomSettings, ...settings, rounds: settings.rounds || 5 };
+    this.roomSettings = { ...this.roomSettings, ...settings, rounds: 999 }; // Sonsuz tur
     this.roomCode = 'SOLO-' + Math.floor(1000 + Math.random() * 9000);
     this.myId = 'solo_player';
     this.localPlayer.id = this.myId;
     this.localPlayer.isHost = true;
     this.players = [{ ...this.localPlayer }];
 
-    const botArchetypes = [
-      { name: 'Kaan (Pro)', avatar: 'assets/avatars/wizard.jpg', color: '#f1c40f', iq: 0.8 },
-      { name: 'Zeynep_JS', avatar: 'assets/avatars/gamergirl.jpg', color: '#00e5ff', iq: 0.65 },
-      { name: 'PikselBot', avatar: 'assets/avatars/jester.jpg', color: '#9d4edd', iq: 0.5 },
-      { name: 'AlevliKurt', avatar: 'assets/avatars/coolcat.jpg', color: '#ff6b00', iq: 0.6 }
-    ];
-
-    for (let i = 0; i < Math.min(botCount, botArchetypes.length); i++) {
-      const b = botArchetypes[i];
+    // Botları ekle
+    const botNames = ['Kaan', 'Zeynep', 'PikselBot', 'NeonNinja'];
+    const botAvatars = ['🤖', '👽', '👾', '👻'];
+    
+    for(let i=0; i<3; i++) {
       this.players.push({
-        id: 'bot_' + i, name: b.name, avatar: b.avatar, color: b.color,
-        score: 0, streak: 0, isHost: false, isReady: true, isBot: true, iq: b.iq, status: 'Hazır'
+        id: 'bot_' + i,
+        name: botNames[i],
+        avatar: botAvatars[i],
+        score: 0,
+        streak: 0,
+        isHost: false,
+        isReady: true,
+        isBot: true,
+        status: 'Hazır'
       });
     }
 
     if (this.onPlayerListUpdate) this.onPlayerListUpdate(this.players);
+    
+    // Auto start the game after a short delay
+    setTimeout(() => {
+      this.startGame();
+    }, 1500);
+
     return this.roomCode;
   }
 
   addBotToRoom() {
-    if (!this.isHost) return;
-    if (this.players.length >= 8) return;
-
-    const b = { name: 'SiberBot', avatar: 'assets/avatars/shadow.jpg', color: '#0070dd', iq: 0.6 };
-    const newBot = {
-      id: 'bot_' + Date.now(), name: b.name + Math.floor(Math.random()*10), avatar: b.avatar, color: b.color,
-      score: 0, streak: 0, isHost: false, isReady: true, isBot: true, iq: b.iq, status: 'Hazır'
-    };
-
-    this.players.push(newBot);
-    this.updateState({ players: this.players });
+    if (this.onStatusMessage) this.onStatusMessage('Botlar eklendi, sadece tek oyunculu modda desteklenir.');
   }
 
   // --- CLIENT: ODAYA KATILMA ---
@@ -367,6 +364,7 @@ class NetworkManager {
   nextRound() {
     this.clearRoundTimers();
     this.currentRound++;
+    this.roundActive = true;
 
     if (this.currentRound > this.roomSettings.rounds) {
       this.endGame();
@@ -374,8 +372,9 @@ class NetworkManager {
     }
 
     const category = this.roomSettings.category || 'genel';
-    this.currentWordData = getRandomWord(category);
+    this.currentWordData = getRandomWord(category, this.usedWords);
     this.targetWord = toTurkishUpper(this.currentWordData.word);
+    this.usedWords.push(this.targetWord);
 
     this.revealedLetters = Array(this.targetWord.length).fill(null);
     this.secondsToNextLetter = this.roomSettings.revealSpeed || 3;
@@ -398,7 +397,6 @@ class NetworkManager {
     });
 
     this.startRoundTicker();
-    this.scheduleBotGuesses();
   }
 
   startRoundTicker() {
@@ -422,6 +420,12 @@ class NetworkManager {
             letter: this.targetWord[randIdx],
             revealedLetters: this.revealedLetters
           });
+
+          // FIX: If this was the last letter to reveal, immediately end the round.
+          if (unrevealed.length === 1) {
+            this.handleRoundTimeout();
+            return;
+          }
         }
         nextLetterCounter = this.secondsToNextLetter;
       }
@@ -429,47 +433,42 @@ class NetworkManager {
       this.roundTimer--;
       this.emitEvent('TIMER_TICK', { roundTimer: this.roundTimer, nextLetterIn: nextLetterCounter });
 
-      const allRevealed = this.revealedLetters.every(l => l !== null);
-      if (this.roundTimer <= 0 || (allRevealed && nextLetterCounter <= 1)) {
+      // Bot logic for singleplayer
+      if (this.isSinglePlayer && this.roundActive && this.targetWord) {
+         this.players.forEach(p => {
+           if (p.isBot && this.roundActive) {
+             const unrevealedCount = this.revealedLetters.filter(l => l === null).length;
+             const totalLetters = this.targetWord.length;
+             const revealedRatio = (totalLetters - unrevealedCount) / totalLetters;
+             
+             let chance = 0;
+             if (revealedRatio >= 0.8) chance = 0.25;
+             else if (revealedRatio >= 0.5) chance = 0.08;
+             else if (revealedRatio >= 0.3) chance = 0.02;
+
+             if (Math.random() < chance) {
+               this.processGuess(p.id, this.targetWord);
+             }
+           }
+         });
+      }
+
+      if (this.roundTimer <= 0) {
         this.handleRoundTimeout();
       }
     }, 1000);
   }
 
-  scheduleBotGuesses() {
-    this.botIntervals.forEach(t => clearTimeout(t));
-    this.botIntervals = [];
-
-    const bots = this.players.filter(p => p.isBot);
-    bots.forEach(bot => {
-      const minDelay = 2500 + Math.random() * 3000;
-      const maxDelay = (this.targetWord.length * this.secondsToNextLetter * 1000) - 2000;
-      const delay = Math.max(minDelay, Math.random() * maxDelay);
-
-      const timeout = setTimeout(() => {
-        const revealedCount = this.revealedLetters.filter(x => x !== null).length;
-        const ratio = revealedCount / this.targetWord.length;
-        const chance = (bot.iq || 0.6) * (0.3 + ratio * 0.7);
-
-        if (Math.random() < chance) {
-          this.processGuess(bot.id, this.targetWord);
-          setTimeout(() => {
-            const emojis = ['🔥', '😎', '🧠', '💯', '👑'];
-            this.emitEvent('REACTION', { emoji: emojis[Math.floor(Math.random() * emojis.length)], playerId: bot.id });
-          }, 400);
-        }
-      }, delay);
-      this.botIntervals.push(timeout);
-    });
-  }
-
   processGuess(playerId, rawGuess) {
-    if (!this.targetWord) return;
+    if (!this.targetWord || !this.roundActive) return;
     const guess = toTurkishUpper(rawGuess);
     const player = this.players.find(p => p.id === playerId);
     if (!player) return;
 
-    if (guess === this.targetWord) {
+    if (guess === this.targetWord && this.roundActive) {
+      this.roundActive = false; // Strictly prevent multiple winners
+      const wordCopy = this.targetWord; // Copy word before clearing
+      this.targetWord = null; // Clear target word to prevent spam completely
       this.clearRoundTimers();
 
       const unrevealedCount = this.revealedLetters.filter(l => l === null).length;
@@ -489,7 +488,7 @@ class NetworkManager {
       });
 
       this.updateState({ players: this.players });
-      this.emitEvent('CORRECT_GUESS', { winner: player, word: this.targetWord, points: totalPoints, players: this.players });
+      this.emitEvent('CORRECT_GUESS', { winner: player, word: wordCopy, points: totalPoints, players: this.players });
 
       setTimeout(() => this.nextRound(), 3500);
     } else {
@@ -499,27 +498,60 @@ class NetworkManager {
   }
 
   handleRoundTimeout() {
+    if (!this.roundActive) return;
+    this.roundActive = false;
+    const wordCopy = this.targetWord;
+    this.targetWord = null; // Clear target word to prevent spam
     this.clearRoundTimers();
+    
     this.players.forEach(p => { p.streak = 0; p.status = 'Süre Bitti!'; });
     this.updateState({ players: this.players });
-    this.emitEvent('ROUND_TIMEOUT', { word: this.targetWord, players: this.players });
+    this.emitEvent('ROUND_TIMEOUT', { word: wordCopy, players: this.players });
+    
+    if (this.isSinglePlayer) {
+      setTimeout(() => this.nextRound(), 3500);
+      return;
+    }
     setTimeout(() => this.nextRound(), 3500);
   }
 
   endGame() {
     this.clearRoundTimers();
+    this.roundActive = false;
+    this.targetWord = null;
     const sorted = [...this.players].sort((a, b) => b.score - a.score);
     this.emitEvent('GAME_OVER', { leaderboard: sorted });
   }
 
   clearRoundTimers() {
-    clearInterval(this.roundInterval);
-    this.roundInterval = null;
-    this.botIntervals.forEach(t => clearTimeout(t));
-    this.botIntervals = [];
+    if (this.roundInterval) {
+      clearInterval(this.roundInterval);
+      this.roundInterval = null;
+    }
   }
 
   // --- İSTEMCİ GÖNDERİMLERİ ---
+  submitGlobalScore(player) {
+    if (!isFirebaseConfigured || !db) return;
+    const dateStr = new Date().toISOString().split('T')[0];
+    db.ref(`global_scores/${dateStr}`).push({
+      name: player.name,
+      avatar: player.avatar,
+      score: player.score,
+      timestamp: Date.now()
+    });
+  }
+
+  getDailyScores(callback) {
+    if (!isFirebaseConfigured || !db) return;
+    const dateStr = new Date().toISOString().split('T')[0];
+    db.ref(`global_scores/${dateStr}`).orderByChild('score').limitToLast(10).once('value', snapshot => {
+      const scores = [];
+      snapshot.forEach(child => { scores.push(child.val()); });
+      callback(scores.reverse());
+    });
+  }
+
   sendGuess(guessText) {
     if (this.isHost) this.processGuess(this.myId, guessText);
     else if (this.actionsRef) this.actionsRef.push({ type: 'SUBMIT_GUESS', playerId: this.myId, guess: guessText });

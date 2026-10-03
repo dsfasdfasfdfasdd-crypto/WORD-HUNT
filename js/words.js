@@ -72,7 +72,7 @@ const WORD_DATABASE = {
     { word: "SENSÖR", hint: "Çevresel değişimleri algılayan elektronik algılayıcı" },
     { word: "DRONE", hint: "Uzaktan kumandalı insansız hava aracı" },
     { word: "HOLOGRAM", hint: "Üç boyutlu ışık görüntüsü üreten teknoloji" },
-    { word: "ŞARİT", hint: "Veri kablosu veya manyetik kayıt bandı" },
+    { word: "ŞERİT", hint: "Veri kablosu veya manyetik kayıt bandı" },
     { word: "MODEM", hint: "İnternet sinyalini dönüştüren ağ cihazı" },
     { word: "TABLET", hint: "Dokunmatik ekranlı taşınabilir bilgisayar" }
   ],
@@ -222,3 +222,26 @@ function toTurkishUpper(str) {
   if (!str) return '';
   return str.toLocaleUpperCase('tr-TR').trim();
 }
+
+WORD_DATABASE.genel.push(
+  { word: "BİLGİSAYAR", hint: "Verileri işleyen ve depolayan elektronik cihaz" },
+  { word: "İNTERNET", hint: "Dünya çapında bilgisayar ağlarının birbirine bağlanması" },
+  { word: "PROGRAM", hint: "Bilgisayara belirli bir işi yaptıran komutlar dizisi" },
+  { word: "YAZILIM", hint: "Bilgisayardaki tüm programlara verilen genel ad" },
+  { word: "DONANIM", hint: "Bilgisayarı oluşturan fiziksel parçaların bütünü" },
+  { word: "KLAVYE", hint: "Üzerinde tuşlar bulunan veri giriş birimi" },
+  { word: "FARE", hint: "İmleci hareket ettiren işaretleme aygıtı" },
+  { word: "MONİTÖR", hint: "Görüntüyü yansıtan ekran donanımı" },
+  { word: "YAZICI", hint: "Bilgisayardaki belgeleri kağıda döken cihaz" },
+  { word: "TARAYICI", hint: "Kağıttaki belgeyi dijital ortama aktaran cihaz" },
+  { word: "MİKROFON", hint: "Sesleri bilgisayara aktaran cihaz" },
+  { word: "HOPARLÖR", hint: "Bilgisayardan çıkan sesi duymamızı sağlayan cihaz" },
+  { word: "KAMERA", hint: "Görüntüleri kaydeden veya aktaran cihaz" },
+  { word: "KULAKLIK", hint: "Sesi sadece kullanıcının duymasını sağlayan cihaz" },
+  { word: "İŞLEMCİ", hint: "Bilgisayarın beyni olan donanım parçası" },
+  { word: "BELLEK", hint: "Verilerin geçici olarak saklandığı donanım parçası" },
+  { word: "ANAKART", hint: "Tüm donanım parçalarının takıldığı ana levha" },
+  { word: "SÜRÜCÜ", hint: "Verileri depolayan veya okuyan donanım parçası" },
+  { word: "MODEM", hint: "İnternete bağlanmayı sağlayan cihaz" },
+  { word: "SUNUCU", hint: "Ağdaki diğer bilgisayarlara hizmet veren güçlü bilgisayar" }
+);
