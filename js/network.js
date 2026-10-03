@@ -7,13 +7,14 @@
 // 2. Realtime Database oluştur (Test modunda).
 // 3. Proje ayarlarından "Web Uygulaması" ekle ve sana verilen Config nesnesini aşağıya yapıştır!
 const firebaseConfig = {
-  apiKey: "BURAYA_KENDI_BILGILERINI_YAPISTIR",
-  authDomain: "word-hunt-io.firebaseapp.com",
-  databaseURL: "https://word-hunt-io.firebaseio.com",
-  projectId: "word-hunt-io",
-  storageBucket: "word-hunt-io.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abcdef"
+  apiKey: "AIzaSyBkXj7oYHgDFnEuXvHKmTFiMDGQSZ1ueJk",
+  authDomain: "word-hunter-dc231.firebaseapp.com",
+  databaseURL: "https://word-hunter-dc231-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "word-hunter-dc231",
+  storageBucket: "word-hunter-dc231.firebasestorage.app",
+  messagingSenderId: "929019408802",
+  appId: "1:929019408802:web:5d65dca7fafd61824642fb",
+  measurementId: "G-P885W0QM3Z"
 };
 
 // Config kontrolü
